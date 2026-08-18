@@ -4,6 +4,8 @@
 
 Public Next.js 16 deployment on Vercel. Open the landing page, then **Open live demo** for the dashboard or **Try AI chat** for the streaming agent — no signup required.
 
+If Vercel asks for a **Project Name**, use exactly: `saasforge-elite` (lowercase, no spaces). The GitHub repo name `SaaSForge-Elite` is rejected by Vercel’s slug rules.
+
 # SaaSForge Elite
 
 ### **Ship a production-grade, multi-tenant SaaS in a weekend — not a quarter. One clone saves 100+ hours of architecture, auth, billing, and AI plumbing.**
