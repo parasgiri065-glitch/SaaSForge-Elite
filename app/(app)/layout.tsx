@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { RequireAuth } from "@/components/auth/require-auth";
+import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { requireUser } from "@/lib/auth/require-user";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +10,7 @@ export default async function ProtectedAppLayout({ children }: { children: React
 
   return (
     <RequireAuth>
-      <div className="min-h-screen">{children}</div>
+      <DashboardShell>{children}</DashboardShell>
     </RequireAuth>
   );
 }

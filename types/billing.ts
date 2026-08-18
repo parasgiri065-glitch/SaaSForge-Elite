@@ -19,3 +19,25 @@ export const ACTIVE_SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [
   "trialing",
   "active",
 ];
+
+export type InvoiceStatus = "paid" | "open" | "void" | "uncollectible";
+
+export type Invoice = {
+  id: string;
+  number: string;
+  issuedAt: string;
+  amountCents: number;
+  currency: string;
+  status: InvoiceStatus;
+  hostedUrl: string | null;
+  isMock: boolean;
+};
+
+export type PlanTier = "Starter" | "Growth" | "Enterprise" | "None";
+
+export function formatUsd(amountCents: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amountCents / 100);
+}

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
 
 export function SignOutButton() {
   const { signOut } = useAuth();
@@ -17,15 +18,17 @@ export function SignOutButton() {
   }
 
   return (
-    <button
+    <Button
       type="button"
+      variant="secondary"
+      size="sm"
+      className="w-full"
+      disabled={pending}
       onClick={() => {
         void onClick();
       }}
-      disabled={pending}
-      className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm disabled:opacity-60"
     >
       {pending ? "Signing out…" : "Sign out"}
-    </button>
+    </Button>
   );
 }
