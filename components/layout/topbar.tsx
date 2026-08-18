@@ -22,9 +22,6 @@ export function Topbar({ title, onOpenSidebar }: TopbarProps) {
       <h1 className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight md:text-base">
         {title}
       </h1>
-      <span className="hidden rounded-full border border-white/10 px-2.5 py-1 font-mono text-[10px] tracking-wider text-white/45 uppercase sm:inline">
-        rec · live
-      </span>
       <ThemeToggle />
     </header>
   );
