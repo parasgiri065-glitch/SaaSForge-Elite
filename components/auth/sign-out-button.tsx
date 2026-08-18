@@ -1,19 +1,22 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { isDemoMode } from "@/lib/env";
 
 export function SignOutButton() {
   const { signOut } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [pending, setPending] = useState(false);
 
   async function onClick() {
     setPending(true);
     await signOut();
-    router.replace("/login");
+    const next = isDemoMode || pathname.startsWith("/demo") ? "/" : "/login";
+    router.replace(next);
     router.refresh();
   }
 

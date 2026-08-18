@@ -4,24 +4,25 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
-import { APP_NAV } from "@/components/layout/nav-items";
+import { getAppNav } from "@/components/layout/nav-items";
 import { IconClose } from "@/components/ui/icons";
 
 interface DashboardShellProps {
   children: ReactNode;
+  basePath?: string;
 }
 
-function titleForPath(pathname: string): string {
-  const match = APP_NAV.find(
+function titleForPath(pathname: string, basePath: string): string {
+  const match = getAppNav(basePath).find(
     (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
   );
   return match?.label ?? "Workspace";
 }
 
-export function DashboardShell({ children }: DashboardShellProps) {
+export function DashboardShell({ children, basePath = "" }: DashboardShellProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const title = useMemo(() => titleForPath(pathname), [pathname]);
+  const title = useMemo(() => titleForPath(pathname, basePath), [basePath, pathname]);
 
   useEffect(() => {
     if (!mobileOpen) {
@@ -59,7 +60,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
             >
               <IconClose className="h-4 w-4" />
             </button>
-            <Sidebar onNavigate={() => setMobileOpen(false)} />
+            <Sidebar basePath={basePath} onNavigate={() => setMobileOpen(false)} />
           </aside>
         </div>
       ) : null}

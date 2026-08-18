@@ -102,6 +102,10 @@ describe("public path guards", () => {
     expect(isPublicPath("/api/health")).toBe(true);
     expect(isPublicPath("/api/webhooks/stripe")).toBe(true);
     expect(isPublicPath("/api/stripe/webhook")).toBe(true);
+    expect(isPublicPath("/demo")).toBe(true);
+    expect(isPublicPath("/demo/dashboard")).toBe(true);
+    expect(isPublicPath("/demo/agents")).toBe(true);
+    expect(isPublicPath("/demo/settings/billing")).toBe(true);
   });
 
   it("protects the dashboard and billing portal", () => {

@@ -13,3 +13,11 @@ export const APP_NAV: readonly NavItem[] = [
   { href: "/settings/billing", label: "Billing", icon: IconCard },
   { href: "/settings/team", label: "Team", icon: IconUsers },
 ];
+
+export function getAppNav(basePath = ""): NavItem[] {
+  const prefix = basePath.replace(/\/$/, "");
+  return APP_NAV.map((item) => ({
+    ...item,
+    href: `${prefix}${item.href}`,
+  }));
+}

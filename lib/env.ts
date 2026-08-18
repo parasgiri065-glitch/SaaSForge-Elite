@@ -13,6 +13,8 @@ export const publicEnv = {
   stripePublishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
 } as const;
 
+export const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
 export function requirePublicEnv(name: keyof typeof publicEnv): string {
   const value = publicEnv[name];
   if (!value) {

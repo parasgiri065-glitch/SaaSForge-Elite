@@ -2,25 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { APP_NAV } from "@/components/layout/nav-items";
+import { getAppNav } from "@/components/layout/nav-items";
 import { IconMark } from "@/components/ui/icons";
 import { useAuth } from "@/hooks/use-auth";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 
 function isActive(pathname: string, href: string): boolean {
-  if (href === "/dashboard") {
-    return pathname === "/dashboard";
-  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 interface SidebarProps {
   onNavigate?: () => void;
+  basePath?: string;
 }
 
-export function Sidebar({ onNavigate }: SidebarProps) {
+export function Sidebar({ onNavigate, basePath = "" }: SidebarProps) {
   const pathname = usePathname();
   const { tenantUser } = useAuth();
+  const nav = getAppNav(basePath);
   const displayName = tenantUser?.profile?.full_name ?? tenantUser?.email ?? "Workspace";
   const orgName = tenantUser?.organization?.name ?? "No organization";
 
@@ -37,7 +36,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       </div>
 
       <nav aria-label="Workspace" className="flex-1 space-y-1 overflow-y-auto p-3">
-        {APP_NAV.map((item) => {
+        {nav.map((item) => {
           const active = isActive(pathname, item.href);
           const Icon = item.icon;
           return (

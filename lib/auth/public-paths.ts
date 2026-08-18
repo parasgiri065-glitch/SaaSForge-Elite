@@ -7,7 +7,7 @@ const PUBLIC_EXACT = new Set([
   "/api/stripe/webhook",
 ]);
 
-const PUBLIC_PREFIXES = ["/callback", "/api/webhooks", "/api/health"] as const;
+const PUBLIC_PREFIXES = ["/callback", "/api/webhooks", "/api/health", "/demo"] as const;
 
 export function isPublicPath(pathname: string): boolean {
   if (PUBLIC_EXACT.has(pathname)) {

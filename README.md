@@ -1,3 +1,9 @@
+# 🚀 Live Demo
+
+**https://temporary-swift-thunder-ubk8aky.vercel.app**
+
+Public Next.js 16 deployment on Vercel. Open the landing page, then **Open live demo** for the dashboard or **Try AI chat** for the streaming agent — no signup required.
+
 # SaaSForge Elite
 
 ### **Ship a production-grade, multi-tenant SaaS in a weekend — not a quarter. One clone saves 100+ hours of architecture, auth, billing, and AI plumbing.**
