@@ -33,6 +33,17 @@ const eslintConfig = defineConfig([
       ],
       "react/self-closing-comp": ["error", { component: true, html: true }],
       "react/jsx-boolean-value": ["error", "never"],
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["./*", "../*", "../**"],
+              message: "Use the @/* path alias. Relative parent imports are banned.",
+            },
+          ],
+        },
+      ],
       "no-restricted-syntax": [
         "error",
         {

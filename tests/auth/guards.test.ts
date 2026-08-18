@@ -5,7 +5,7 @@ import {
   resolveVerifiedTenantUser,
 } from "@/lib/auth/guards";
 import { isAuthPage, isPublicPath } from "@/lib/auth/public-paths";
-import { makeTenantUser } from "../helpers/tenant";
+import { makeTenantUser } from "@/tests/helpers/tenant";
 
 describe("readSubjectFromClaims", () => {
   it("returns null when getClaims reports an error (expired / invalid token)", () => {

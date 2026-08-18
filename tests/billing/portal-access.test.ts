@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { decidePortalAccess } from "@/lib/billing/portal-access";
-import { makeTenantUser } from "../helpers/tenant";
+import { makeTenantUser } from "@/tests/helpers/tenant";
 
 describe("decidePortalAccess", () => {
   it("rejects an empty / unauthenticated request", () => {
