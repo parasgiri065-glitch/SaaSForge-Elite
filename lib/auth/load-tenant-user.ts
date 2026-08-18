@@ -56,11 +56,14 @@ export async function loadTenantUser(
 
   let subscription: Subscription | null = null;
   if (organization) {
-    const { data: sub } = await supabase
+    const { data: sub, error: subError } = await supabase
       .from("subscriptions")
       .select("*")
       .eq("organization_id", organization.id)
       .maybeSingle();
+    if (subError) {
+      return null;
+    }
     subscription = sub ?? null;
   }
 

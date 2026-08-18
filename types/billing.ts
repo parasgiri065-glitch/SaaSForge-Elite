@@ -1,4 +1,4 @@
-import type { SubscriptionStatus } from "@/types/database";
+import type { Subscription, SubscriptionStatus } from "@/types/database";
 
 export const SUBSCRIPTION_STATUSES = [
   "incomplete",
@@ -40,4 +40,21 @@ export function formatUsd(amountCents: number): string {
     style: "currency",
     currency: "USD",
   }).format(amountCents / 100);
+}
+
+export function resolvePlanTier(subscription: Subscription | null): PlanTier {
+  const price = (subscription?.stripe_price_id ?? "").toLowerCase();
+  if (price.includes("enterprise")) {
+    return "Enterprise";
+  }
+  if (price.includes("growth")) {
+    return "Growth";
+  }
+  if (price.includes("starter")) {
+    return "Starter";
+  }
+  if (subscription) {
+    return "Growth";
+  }
+  return "None";
 }

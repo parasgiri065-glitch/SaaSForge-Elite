@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { loadTenantUser } from "@/lib/auth/load-tenant-user";
+import { isUsableTenantUser, resolveVerifiedTenantUser } from "@/lib/auth/guards";
 import type { TenantUser } from "@/types/auth";
 
 /**
@@ -8,20 +9,26 @@ import type { TenantUser } from "@/types/auth";
  * Validates the JWT via getClaims(), then loads the tenant-scoped user.
  */
 export async function getVerifiedTenantUser(): Promise<TenantUser | null> {
-  const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase.auth.getClaims();
-  const userId = data?.claims?.sub;
-
-  if (error || typeof userId !== "string" || userId.length === 0) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    return await resolveVerifiedTenantUser({
+      getClaims: async () => {
+        const result = await supabase.auth.getClaims();
+        return {
+          data: result.data,
+          error: result.error,
+        };
+      },
+      loadUser: (userId) => loadTenantUser(supabase, userId),
+    });
+  } catch {
     return null;
   }
-
-  return loadTenantUser(supabase, userId);
 }
 
 export async function requireUser(redirectTo = "/login"): Promise<TenantUser> {
   const user = await getVerifiedTenantUser();
-  if (!user || !user.is_active) {
+  if (!isUsableTenantUser(user)) {
     redirect(redirectTo);
   }
   return user;

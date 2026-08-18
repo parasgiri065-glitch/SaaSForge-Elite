@@ -1,32 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { publicEnv } from "@/lib/env";
+import { isAuthPage, isPublicPath } from "@/lib/auth/public-paths";
 import type { Database } from "@/types/database";
-
-const PUBLIC_PREFIXES = [
-  "/",
-  "/login",
-  "/signup",
-  "/callback",
-  "/api/webhooks",
-  "/api/health",
-  "/api/stripe/webhook",
-];
-
-function isPublicPath(pathname: string): boolean {
-  if (PUBLIC_PREFIXES.includes(pathname)) {
-    return true;
-  }
-  return (
-    pathname.startsWith("/callback") ||
-    pathname.startsWith("/api/webhooks") ||
-    pathname.startsWith("/api/health")
-  );
-}
-
-function isAuthPage(pathname: string): boolean {
-  return pathname === "/login" || pathname === "/signup";
-}
 
 /**
  * Refresh the Supabase JWT and perform optimistic redirects.
@@ -59,8 +35,13 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     },
   });
 
-  const { data } = await supabase.auth.getClaims();
-  const hasUser = Boolean(data?.claims?.sub);
+  let hasUser = false;
+  try {
+    const { data } = await supabase.auth.getClaims();
+    hasUser = Boolean(data?.claims?.sub);
+  } catch {
+    hasUser = false;
+  }
   const { pathname } = request.nextUrl;
 
   if (!hasUser && !isPublicPath(pathname)) {

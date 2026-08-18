@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AgentSessionPage() {
-  return <ChatViewport />;
+export default async function AgentSessionPage({
+  params,
+}: {
+  params: Promise<{ agentId: string }>;
+}) {
+  const { agentId } = await params;
+  return <ChatViewport agentId={agentId} />;
 }

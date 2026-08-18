@@ -41,25 +41,48 @@ export function AuthProvider({
         setTenantUser(null);
         return;
       }
-      const next = await loadTenantUser(supabase, userId);
-      setTenantUser(next);
+      try {
+        const next = await loadTenantUser(supabase, userId);
+        setTenantUser(next);
+      } catch {
+        setTenantUser(null);
+      }
     },
     [supabase],
   );
 
+  const applyAuthUser = useCallback(
+    async (user: AuthUser | null) => {
+      if (!user) {
+        setAuthUser(null);
+        setSession(null);
+        setTenantUser(null);
+        return;
+      }
+      setAuthUser(user);
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        setSession(sessionData.session);
+      } catch {
+        setSession(null);
+      }
+      await hydrateTenant(user.id);
+    },
+    [hydrateTenant, supabase],
+  );
+
   const refresh = useCallback(async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
-      setAuthUser(null);
-      setSession(null);
-      setTenantUser(null);
-      return;
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) {
+        await applyAuthUser(null);
+        return;
+      }
+      await applyAuthUser(data.user);
+    } catch {
+      await applyAuthUser(null);
     }
-    setAuthUser(data.user);
-    const { data: sessionData } = await supabase.auth.getSession();
-    setSession(sessionData.session);
-    await hydrateTenant(data.user.id);
-  }, [hydrateTenant, supabase]);
+  }, [applyAuthUser, supabase]);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,17 +95,14 @@ export function AuthProvider({
           return;
         }
         if (error || !data.user) {
-          setAuthUser(null);
-          setSession(null);
-          setTenantUser(null);
+          await applyAuthUser(null);
           return;
         }
-        setAuthUser(data.user);
-        const { data: sessionData } = await supabase.auth.getSession();
+        await applyAuthUser(data.user);
+      } catch {
         if (!cancelled) {
-          setSession(sessionData.session);
+          await applyAuthUser(null);
         }
-        await hydrateTenant(data.user.id);
       } finally {
         if (!cancelled) {
           setIsLoading(false);
@@ -94,23 +114,15 @@ export function AuthProvider({
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      setSession(nextSession);
-      setAuthUser(nextSession?.user ?? null);
-      if (event === "SIGNED_OUT") {
-        setTenantUser(null);
-        return;
-      }
-      if (nextSession?.user) {
-        void hydrateTenant(nextSession.user.id);
-      }
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      void applyAuthUser(nextSession?.user ?? null);
     });
 
     return () => {
       cancelled = true;
       subscription.unsubscribe();
     };
-  }, [hydrateTenant, supabase]);
+  }, [applyAuthUser, supabase]);
 
   const signIn = useCallback(
     async (email: string, password: string) => {
@@ -155,12 +167,15 @@ export function AuthProvider({
   );
 
   const signOut = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
-    setAuthUser(null);
-    setSession(null);
-    setTenantUser(null);
-    return { error: error?.message ?? null };
-  }, [supabase]);
+    try {
+      const { error } = await supabase.auth.signOut();
+      await applyAuthUser(null);
+      return { error: error?.message ?? null };
+    } catch (error) {
+      await applyAuthUser(null);
+      return { error: error instanceof Error ? error.message : "sign_out_failed" };
+    }
+  }, [applyAuthUser, supabase]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

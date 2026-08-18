@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { readJsonError, readJsonUrl } from "@/lib/http/json-error";
 
 interface ManageSubscriptionButtonProps {
   hasCustomer: boolean;
@@ -27,23 +28,12 @@ export function ManageSubscriptionButton({
       const response = await fetch("/api/stripe/portal", { method: "POST" });
       const body: unknown = await response.json().catch(() => null);
       if (!response.ok) {
-        const message =
-          typeof body === "object" &&
-          body !== null &&
-          "error" in body &&
-          typeof body.error === "string"
-            ? body.error
-            : "Could not open the billing portal";
-        setError(message);
+        setError(readJsonError(body, "Could not open the billing portal"));
         return;
       }
-      if (
-        typeof body === "object" &&
-        body !== null &&
-        "url" in body &&
-        typeof body.url === "string"
-      ) {
-        window.location.assign(body.url);
+      const url = readJsonUrl(body);
+      if (url) {
+        window.location.assign(url);
         return;
       }
       setError("Portal response was missing a URL");

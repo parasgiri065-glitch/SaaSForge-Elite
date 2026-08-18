@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe/client";
 import { processStripeEvent } from "@/lib/stripe/webhook";
+import { inspectWebhookRequest } from "@/lib/stripe/webhook-request";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { serverEnv } from "@/lib/env.server";
 
@@ -31,16 +32,19 @@ export async function POST(request: Request) {
     return json(400, { error: "invalid_body" });
   }
 
-  const signature = request.headers.get("stripe-signature");
-  if (!signature) {
-    return json(400, { error: "missing_stripe_signature" });
+  const inspected = inspectWebhookRequest(
+    rawBody,
+    request.headers.get("stripe-signature"),
+  );
+  if (!inspected.ok) {
+    return json(inspected.status, { error: inspected.error });
   }
 
   let event: Stripe.Event;
   try {
     event = getStripe().webhooks.constructEvent(
-      rawBody,
-      signature,
+      inspected.rawBody,
+      inspected.signature,
       serverEnv.stripeWebhookSecret,
     );
   } catch (error) {

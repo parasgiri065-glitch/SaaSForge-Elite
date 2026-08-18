@@ -5,35 +5,17 @@ import { InvoiceTable } from "@/components/billing/invoice-table";
 import { ManageSubscriptionButton } from "@/components/billing/manage-subscription-button";
 import { MOCK_INVOICES } from "@/components/billing/mock-invoices";
 import { useAuth } from "@/hooks/use-auth";
-import type { Invoice, PlanTier } from "@/types/billing";
-import type { Subscription } from "@/types/database";
+import { resolvePlanTier, type Invoice } from "@/types/billing";
 
 interface BillingPanelProps {
   invoices?: Invoice[];
   onManage?: () => Promise<void> | void;
 }
 
-function resolvePlan(subscription: Subscription | null): PlanTier {
-  const price = subscription?.stripe_price_id ?? "";
-  if (price.includes("ENTERPRISE") || price.toLowerCase().includes("enterprise")) {
-    return "Enterprise";
-  }
-  if (price.includes("GROWTH") || price.toLowerCase().includes("growth")) {
-    return "Growth";
-  }
-  if (price.includes("STARTER") || price.toLowerCase().includes("starter")) {
-    return "Starter";
-  }
-  if (subscription) {
-    return "Growth";
-  }
-  return "None";
-}
-
 export function BillingPanel({ invoices = MOCK_INVOICES, onManage }: BillingPanelProps) {
   const { tenantUser } = useAuth();
   const subscription = tenantUser?.subscription ?? null;
-  const plan = resolvePlan(subscription);
+  const plan = resolvePlanTier(subscription);
   const hasCustomer = Boolean(tenantUser?.organization?.stripe_customer_id);
 
   return (

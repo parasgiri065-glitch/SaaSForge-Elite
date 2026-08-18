@@ -5,11 +5,14 @@ import { ChatInput } from "@/components/agents/chat-input";
 import { ChatMessage } from "@/components/agents/chat-message";
 import { useAgentStream } from "@/hooks/use-agent-stream";
 
+import { ToolCallTrace } from "@/components/agents/tool-call-trace";
+
 interface ChatViewportProps {
   disabled?: boolean;
+  agentId?: string;
 }
 
-export function ChatViewport({ disabled = false }: ChatViewportProps) {
+export function ChatViewport({ disabled = false, agentId }: ChatViewportProps) {
   const { messages, isStreaming, send, stop } = useAgentStream();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
@@ -50,6 +53,17 @@ export function ChatViewport({ disabled = false }: ChatViewportProps) {
           ) : (
             messages.map((message) => <ChatMessage key={message.id} message={message} />)
           )}
+          {isStreaming ? (
+            <ToolCallTrace
+              calls={[
+                {
+                  name: "scopeTenant",
+                  status: "running",
+                  detail: agentId ? `session ${agentId}` : "workspace context",
+                },
+              ]}
+            />
+          ) : null}
         </div>
       </div>
       <ChatInput
