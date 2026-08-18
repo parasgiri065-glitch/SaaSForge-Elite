@@ -17,8 +17,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
       <div
         className={`max-w-[min(100%,42rem)] rounded-2xl px-4 py-3 shadow-sm ${
           isUser
-            ? "rounded-br-md bg-indigo-600 text-white"
-            : "rounded-bl-md border border-zinc-200 bg-white text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+            ? "rounded-br-md bg-violet-500 text-white shadow-[0_8px_30px_rgba(139,92,246,0.35)]"
+            : "rounded-bl-md border border-white/10 bg-white/10 text-white"
         }`}
       >
         {isUser ? (

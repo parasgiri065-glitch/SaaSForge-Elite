@@ -23,7 +23,7 @@ export function BillingPanel({ invoices = MOCK_INVOICES, onManage }: BillingPane
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Billing</h2>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-white/50">
             Plan, invoices, and the Stripe customer portal for{" "}
             {tenantUser?.organization?.name ?? "your workspace"}.
           </p>

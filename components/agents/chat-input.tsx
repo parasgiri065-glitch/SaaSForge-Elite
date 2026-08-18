@@ -39,9 +39,9 @@ export function ChatInput({ disabled, isStreaming, onSend, onStop }: ChatInputPr
   return (
     <form
       onSubmit={onSubmit}
-      className="border-t border-zinc-200 bg-white/90 p-3 backdrop-blur md:p-4 dark:border-zinc-800 dark:bg-zinc-950/90"
+      className="border-t border-white/10 bg-black/30 p-3 backdrop-blur-xl md:p-4"
     >
-      <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border border-white/10 bg-white/5 p-2">
         <label className="sr-only" htmlFor="agent-prompt">
           Message
         </label>
@@ -79,7 +79,7 @@ export function ChatInput({ disabled, isStreaming, onSend, onStop }: ChatInputPr
           </Button>
         )}
       </div>
-      <p className="mx-auto mt-2 max-w-3xl px-1 text-[11px] text-zinc-500">
+      <p className="mx-auto mt-2 max-w-3xl px-1 text-[11px] text-white/35">
         Enter to send · Shift+Enter for a new line
       </p>
     </form>

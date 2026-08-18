@@ -10,10 +10,10 @@ interface TopbarProps {
 
 export function Topbar({ title, onOpenSidebar }: TopbarProps) {
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-zinc-200 bg-white/80 px-4 backdrop-blur-md md:px-6 dark:border-zinc-800 dark:bg-zinc-950/80">
+    <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-white/10 bg-black/20 px-4 backdrop-blur-xl md:px-6">
       <button
         type="button"
-        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-700 md:hidden dark:border-zinc-700 dark:text-zinc-200"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/80 md:hidden"
         onClick={onOpenSidebar}
         aria-label="Open navigation"
       >
@@ -22,6 +22,9 @@ export function Topbar({ title, onOpenSidebar }: TopbarProps) {
       <h1 className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight md:text-base">
         {title}
       </h1>
+      <span className="hidden rounded-full border border-white/10 px-2.5 py-1 font-mono text-[10px] tracking-wider text-white/45 uppercase sm:inline">
+        rec · live
+      </span>
       <ThemeToggle />
     </header>
   );

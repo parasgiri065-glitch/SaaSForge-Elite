@@ -24,14 +24,16 @@ export function Sidebar({ onNavigate, basePath = "" }: SidebarProps) {
   const orgName = tenantUser?.organization?.name ?? "No organization";
 
   return (
-    <div className="flex h-full flex-col bg-white dark:bg-zinc-950">
-      <div className="flex h-16 items-center gap-2.5 border-b border-zinc-200 px-5 dark:border-zinc-800">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
+    <div className="flex h-full flex-col bg-black/20 backdrop-blur-xl">
+      <div className="flex h-16 items-center gap-2.5 border-b border-white/10 px-5">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/20 text-violet-200 ring-1 ring-white/10">
           <IconMark className="h-4 w-4" />
         </span>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold tracking-tight">SaaSForge</p>
-          <p className="truncate text-[11px] text-zinc-500 dark:text-zinc-400">Elite</p>
+          <p className="truncate text-[11px] tracking-[0.18em] text-white/40 uppercase">
+            Studio
+          </p>
         </div>
       </div>
 
@@ -45,10 +47,10 @@ export function Sidebar({ onNavigate, basePath = "" }: SidebarProps) {
               href={item.href}
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
-              className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-all ${
                 active
-                  ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300"
-                  : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
+                  ? "bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                  : "text-white/55 hover:bg-white/5 hover:text-white"
               }`}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -58,9 +60,9 @@ export function Sidebar({ onNavigate, basePath = "" }: SidebarProps) {
         })}
       </nav>
 
-      <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
+      <div className="border-t border-white/10 p-4">
         <p className="truncate text-sm font-medium">{displayName}</p>
-        <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="truncate text-xs text-white/40">
           {orgName}
           {tenantUser?.role ? ` · ${tenantUser.role}` : ""}
         </p>

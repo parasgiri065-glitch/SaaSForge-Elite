@@ -36,10 +36,14 @@ export function DashboardShell({ children, basePath = "" }: DashboardShellProps)
   }, [mobileOpen]);
 
   return (
-    <div className="flex min-h-screen bg-zinc-50 text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
-      <aside className="hidden w-64 shrink-0 border-r border-zinc-200 lg:block dark:border-zinc-800">
+    <div className="relative flex min-h-screen overflow-hidden bg-[#07060c] text-white">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-[-20%] left-[20%] h-80 w-80 rounded-full bg-violet-600/20 blur-[120px]" />
+        <div className="absolute right-[-10%] bottom-[-10%] h-72 w-72 rounded-full bg-cyan-400/10 blur-[110px]" />
+      </div>
+      <aside className="relative z-10 hidden w-64 shrink-0 border-r border-white/10 lg:block">
         <div className="sticky top-0 h-screen">
-          <Sidebar />
+          <Sidebar basePath={basePath} />
         </div>
       </aside>
 
@@ -51,7 +55,7 @@ export function DashboardShell({ children, basePath = "" }: DashboardShellProps)
             aria-label="Close navigation"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="relative h-full w-[min(18rem,86vw)] border-r border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-950">
+          <aside className="relative h-full w-[min(18rem,86vw)] border-r border-white/10 bg-[#0b0a12] shadow-2xl">
             <button
               type="button"
               className="absolute top-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500"
@@ -65,7 +69,7 @@ export function DashboardShell({ children, basePath = "" }: DashboardShellProps)
         </div>
       ) : null}
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col">
         <Topbar title={title} onOpenSidebar={() => setMobileOpen(true)} />
         <div className="min-h-0 flex-1">{children}</div>
       </div>
