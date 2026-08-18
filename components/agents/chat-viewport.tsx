@@ -44,10 +44,10 @@ export function ChatViewport({ disabled = false, agentId }: ChatViewportProps) {
         <div className="mx-auto flex max-w-3xl flex-col gap-4">
           {messages.length === 0 ? (
             <div className="glass-panel rounded-2xl px-6 py-12 text-center">
-              <p className="text-sm font-medium">Drop a note on the agent track</p>
+<<<<<<< HEAD
+              <p className="text-sm font-medium">Ask the workspace agent</p>
               <p className="mt-1 text-sm text-white/45">
-                Streaming markdown, auto-scroll, and a locked composer while the model
-                grades.
+                Streaming markdown, auto-scroll, and a locked input while it answers.
               </p>
             </div>
           ) : (

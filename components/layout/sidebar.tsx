@@ -31,9 +31,7 @@ export function Sidebar({ onNavigate, basePath = "" }: SidebarProps) {
         </span>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold tracking-tight">SaaSForge</p>
-          <p className="truncate text-[11px] tracking-[0.18em] text-white/40 uppercase">
-            Studio
-          </p>
+          <p className="truncate text-[11px] text-white/40">Elite</p>
         </div>
       </div>
 
