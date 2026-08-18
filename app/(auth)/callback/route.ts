@@ -18,14 +18,10 @@ export async function GET(request: Request) {
     const supabase = await createServerSupabaseClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
-      return NextResponse.redirect(
-        new URL("/login?error=auth_callback", url.origin),
-      );
+      return NextResponse.redirect(new URL("/login?error=auth_callback", url.origin));
     }
     return NextResponse.redirect(new URL(next, url.origin));
   } catch {
-    return NextResponse.redirect(
-      new URL("/login?error=auth_callback", url.origin),
-    );
+    return NextResponse.redirect(new URL("/login?error=auth_callback", url.origin));
   }
 }

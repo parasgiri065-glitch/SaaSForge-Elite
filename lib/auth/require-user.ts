@@ -19,9 +19,7 @@ export async function getVerifiedTenantUser(): Promise<TenantUser | null> {
   return loadTenantUser(supabase, userId);
 }
 
-export async function requireUser(
-  redirectTo = "/login",
-): Promise<TenantUser> {
+export async function requireUser(redirectTo = "/login"): Promise<TenantUser> {
   const user = await getVerifiedTenantUser();
   if (!user || !user.is_active) {
     redirect(redirectTo);
@@ -29,9 +27,7 @@ export async function requireUser(
   return user;
 }
 
-export async function redirectIfAuthenticated(
-  to = "/dashboard",
-): Promise<void> {
+export async function redirectIfAuthenticated(to = "/dashboard"): Promise<void> {
   const user = await getVerifiedTenantUser();
   if (user) {
     redirect(to);

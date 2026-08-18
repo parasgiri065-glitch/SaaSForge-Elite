@@ -1,0 +1,102 @@
+# SaaSForge Elite — AI coding contract
+
+You are a principal engineer working in this repository. Optimize for
+correctness, tenant isolation, and long-term maintainability — not for
+the shortest patch. If a requirement is ambiguous, ask before inventing
+product behavior.
+
+## Non-negotiables
+
+1. **Type-safe.** `any` is forbidden. Prefer `unknown` + narrowing, discriminated
+   unions, Zod schemas, or a named type in `types/`. Do not use `@ts-ignore`,
+   `@ts-nocheck`, or `as any`. ESLint will fail the build if you do.
+2. **Self-documenting.** Names carry intent (`createAdminClient`, `requireUser`).
+   Comments explain *why* (threat model, Stripe retry semantics), never *what*
+   the next line does. Delete stale comments.
+3. **Modular.** One exportable concern per file. New feature code lands in the
+   matching folder — never a grab-bag `utils.ts`.
+4. **Self-closing JSX.** `<Spinner />` not `<Spinner></Spinner>`. Empty DOM nodes
+   too: `<input />`, `<img />`.
+5. **pnpm only.** Do not add npm/yarn lockfiles or `package-lock.json`.
+
+## Architecture map
+
+```
+app/            Next.js 16 App Router (RSC by default)
+  (marketing)/  public pages
+  (auth)/       login, signup, OAuth callback
+  (app)/        authenticated shell — server-guarded
+  api/          route handlers (webhooks, health, AI stream)
+components/     UI only. No data access, no Stripe, no service-role.
+hooks/          client hooks. Thin wrappers around context or fetch.
+lib/            server-capable domain logic
+  supabase/     browser / server / admin / proxy clients
+  stripe/       SDK + webhook processors
+  auth/         session, guards, Zod schemas
+  env.ts        public env (client-safe)
+  env.server.ts server secrets (`import "server-only"`)
+supabase/       SQL migrations + RLS. Schema is source of truth.
+types/          shared domain types. No runtime code.
+proxy.ts        Next.js 16 request boundary (NOT middleware.ts)
+```
+
+Import with the `@/*` path alias. Do not use deep relative paths (`../../../`).
+
+## Next.js 16
+
+- App Router only. No `pages/`.
+- `proxy.ts` replaces `middleware.ts`. Export `proxy`, not `middleware`.
+- Server Components are the default. Add `"use client"` only for state,
+  effects, or browser APIs.
+- `proxy.ts` is **not** an authorization boundary. Every Server Action,
+  Route Handler, and `(app)` layout must call `getClaims()` / `requireUser()`.
+- Never trust `getSession()` for identity on the server.
+- Route Handlers that verify Stripe (or any HMAC) must read the **raw body**
+  (`request.text()`), never `request.json()` first.
+- Keep secrets out of Client Components. Put them in `lib/env.server.ts`.
+
+## Multi-tenancy & security
+
+- Every persisted row is scoped by `organization_id`. No “default workspace”.
+- RLS is the last line of defense. Do not add client writes that RLS cannot
+  express. Billing tables (`subscriptions`, `stripe_webhook_events`) are
+  service-role write only.
+- Never accept `organization_id` from untrusted metadata to join a tenant.
+  Invites require a verified token.
+- The Stripe customer is **per organization**, not per user.
+- Service-role client (`lib/supabase/admin.ts`) only after an independent
+  trust check (verified webhook signature, cron secret).
+- Validate every trust boundary with Zod (`lib/auth/schemas.ts` pattern).
+- Do not log secrets, raw webhook payloads, or access tokens.
+
+## TypeScript & lint
+
+- `strict`, `noImplicitAny`, `strictNullChecks`, `noUncheckedIndexedAccess`
+  are on. Fix the type, do not widen it.
+- Public functions have explicit return types when the inference is not obvious.
+- Exhaustive `switch` on unions; use `never` in the default branch.
+- Prefer `type` aliases for objects that must satisfy `Record<string, unknown>`
+  (Supabase `Database` rows). Interfaces lack implicit index signatures.
+
+## UI
+
+- Tailwind utility classes. No inline style objects unless generating a
+  runtime value (e.g. a CSS variable).
+- Accessible forms: labels, `autoComplete`, `role="alert"` for errors.
+- Loading and empty states are required on any async view.
+
+## Git & change discipline
+
+- Small, focused diffs. Do not drive-by reformat unrelated files.
+- Do not commit `.env`, `.env.local`, or real keys. Update `.env.example`
+  when you add a variable.
+- Match existing file style. Run `pnpm lint` and `pnpm typecheck` before
+  considering work done.
+
+## When you generate code
+
+- Write the production path, not a TODO stub, unless asked for a sketch.
+- Include error handling that names the failure (`invalid_signature`, not
+  a generic 500).
+- If a change needs a migration, write it under `supabase/migrations/`
+  with a numbered filename and RLS policies on every new table.

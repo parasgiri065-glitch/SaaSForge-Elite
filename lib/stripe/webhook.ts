@@ -135,9 +135,7 @@ async function upsertSubscription(
 ): Promise<void> {
   const resolved = await resolveOrganizationId(admin, subscription);
   if (!resolved) {
-    throw new Error(
-      `No organization mapped for Stripe subscription ${subscription.id}`,
-    );
+    throw new Error(`No organization mapped for Stripe subscription ${subscription.id}`);
   }
 
   const customerId = customerIdFrom(subscription.customer);
@@ -215,7 +213,8 @@ async function handleCheckoutCompleted(
   admin: AdminClient,
   session: Stripe.Checkout.Session,
 ): Promise<void> {
-  const organizationId = session.metadata?.["organization_id"] ?? session.client_reference_id;
+  const organizationId =
+    session.metadata?.["organization_id"] ?? session.client_reference_id;
   const customerId = customerIdFrom(session.customer);
   if (!organizationId || !customerId) {
     return;
@@ -248,23 +247,14 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
       await handleInvoicePaid(admin, event.data.object as Stripe.Invoice);
       return;
     case "customer.subscription.deleted":
-      await handleSubscriptionDeleted(
-        admin,
-        event.data.object as Stripe.Subscription,
-      );
+      await handleSubscriptionDeleted(admin, event.data.object as Stripe.Subscription);
       return;
     case "customer.subscription.created":
     case "customer.subscription.updated":
-      await upsertSubscription(
-        admin,
-        event.data.object as Stripe.Subscription,
-      );
+      await upsertSubscription(admin, event.data.object as Stripe.Subscription);
       return;
     case "checkout.session.completed":
-      await handleCheckoutCompleted(
-        admin,
-        event.data.object as Stripe.Checkout.Session,
-      );
+      await handleCheckoutCompleted(admin, event.data.object as Stripe.Checkout.Session);
       return;
     default:
       return;

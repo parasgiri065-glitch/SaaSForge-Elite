@@ -32,9 +32,7 @@ export function AuthProvider({
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [authUser, setAuthUser] = useState<AuthUser | null>(initialAuthUser);
   const [session, setSession] = useState<Session | null>(null);
-  const [tenantUser, setTenantUser] = useState<TenantUser | null>(
-    initialTenantUser,
-  );
+  const [tenantUser, setTenantUser] = useState<TenantUser | null>(initialTenantUser);
   const [isLoading, setIsLoading] = useState(!initialAuthUser);
 
   const hydrateTenant = useCallback(

@@ -24,9 +24,7 @@ export default async function DashboardPage() {
       <dl className="grid gap-4 rounded-lg border border-neutral-200 bg-white p-6 text-sm">
         <div>
           <dt className="text-neutral-500">Organization</dt>
-          <dd className="font-medium">
-            {user.organization?.name ?? "Unassigned"}
-          </dd>
+          <dd className="font-medium">{user.organization?.name ?? "Unassigned"}</dd>
         </div>
         <div>
           <dt className="text-neutral-500">Role</dt>

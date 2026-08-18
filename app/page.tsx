@@ -10,9 +10,9 @@ export default function HomePage() {
         Multi-tenant auth, RLS, and Stripe billing — already wired.
       </h1>
       <p className="max-w-2xl text-lg text-neutral-600">
-        Organizations, users, profiles, and subscriptions sit behind Postgres
-        Row-Level Security. Sessions are verified on the server. Stripe webhooks
-        update tenant entitlements only after signature verification.
+        Organizations, users, profiles, and subscriptions sit behind Postgres Row-Level
+        Security. Sessions are verified on the server. Stripe webhooks update tenant
+        entitlements only after signature verification.
       </p>
       <div className="flex gap-3">
         <Link

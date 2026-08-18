@@ -1,9 +1,7 @@
 import type { SubscriptionStatus } from "@/types/database";
 import { isSubscriptionStatus } from "@/types/billing";
 
-export function mapStripeSubscriptionStatus(
-  status: string,
-): SubscriptionStatus {
+export function mapStripeSubscriptionStatus(status: string): SubscriptionStatus {
   if (isSubscriptionStatus(status)) {
     return status;
   }

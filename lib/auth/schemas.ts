@@ -7,11 +7,7 @@ export const signInSchema = z.object({
 
 export const signUpSchema = signInSchema.extend({
   fullName: z.string().trim().min(1, "Name is required").max(160),
-  organizationName: z
-    .string()
-    .trim()
-    .min(2, "Organization name is required")
-    .max(120),
+  organizationName: z.string().trim().min(2, "Organization name is required").max(120),
 });
 
 export type SignInValues = z.infer<typeof signInSchema>;

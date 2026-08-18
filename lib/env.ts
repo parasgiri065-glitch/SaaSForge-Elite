@@ -13,9 +13,7 @@ export const publicEnv = {
   stripePublishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
 } as const;
 
-export function requirePublicEnv(
-  name: keyof typeof publicEnv,
-): string {
+export function requirePublicEnv(name: keyof typeof publicEnv): string {
   const value = publicEnv[name];
   if (!value) {
     throw new Error(

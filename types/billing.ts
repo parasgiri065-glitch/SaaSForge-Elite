@@ -11,9 +11,7 @@ export const SUBSCRIPTION_STATUSES = [
   "paused",
 ] as const satisfies readonly SubscriptionStatus[];
 
-export function isSubscriptionStatus(
-  value: string,
-): value is SubscriptionStatus {
+export function isSubscriptionStatus(value: string): value is SubscriptionStatus {
   return (SUBSCRIPTION_STATUSES as readonly string[]).includes(value);
 }
 
