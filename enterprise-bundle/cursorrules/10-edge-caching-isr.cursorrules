@@ -1,0 +1,57 @@
+# Edge caching & ISR — production contract
+
+Tenant data is **not** a CDN document. If you cache it at the edge without
+an org tag, you will leak workspace A into workspace B. Read the whitepaper
+`enterprise-bundle/whitepapers/Multi-Tenant-Caching-Architecture.md`
+before adding `revalidate`, `unstable_cache`, or `fetch` cache options.
+
+## What may be cached
+
+| Surface | Cache? | Notes |
+| --- | --- | --- |
+| Landing (`/`) | yes | Public marketing. ISR / `revalidate` OK. |
+| Static assets (`_next/static`) | yes | Immutable hashes. |
+| `/api/health` | **no** | Already `Cache-Control: no-store`. |
+| `/dashboard`, `/settings/*`, `/agents` | **no** | Cookie-authenticated. `force-dynamic`. |
+| `/demo/*` | short / private | Public mock, but still no user PII. |
+| Stripe / Lemon webhooks | **never** | `force-dynamic`, raw body. |
+| `GET /api/stripe/portal` | n/a | POST only. |
+
+## Next.js 16 rules
+
+- Authenticated segments: `export const dynamic = "force-dynamic"` on the
+  layout (`app/(app)/layout.tsx` already). Do not add `revalidate = 60`
+  there.
+- `fetch` from a Server Component to your own origin: default to
+  `cache: "no-store"` when the request would include cookies.
+- `unstable_cache` / `"use cache"` keys **must** include `organizationId`
+  (and usually `userId`) derived from `requireUser()`, never from a query
+  string the client controls.
+- `revalidateTag` / `revalidatePath` after billing webhooks if you ever
+  cache plan entitlements. Tag format: `org:{organizationId}:billing`.
+  Never a global `revalidatePath("/")` to “fix” tenant data.
+- ISR (`revalidate: 3600`) is for **public** pages only.
+
+## Edge / CDN
+
+- Vercel: `regions` in `vercel.json` may pin `iad1`. Do not enable
+  full-route CDN cache for `(app)` just to chase TTFB.
+- `proxy.ts` runs on the edge. Keep it tiny: session refresh + redirect.
+  No Stripe, no model, no admin client.
+- `Cache-Control: private, no-store` on any response that used
+  `cookies()` or `requireUser()`.
+- `s-maxage` is for public marketing HTML/JSON only.
+- Purge by **tag**, not by wildcard URL, when the tag is org-scoped.
+
+## Audit checklist (run before launch)
+
+1. `curl -I` dashboard with no cookie → 307/302 to login, not 200 HTML
+   of someone else’s shell.
+2. Two orgs, two sessions: response bodies never contain the other org’s
+   `stripe_customer_id` or billing email.
+3. Webhook POST is uncached (second POST with same body still hits Node).
+4. Landing `Age` / `x-vercel-cache` may be HIT; `/settings/billing` must
+   not.
+5. No `Cache-Control: public` on `Set-Cookie` responses.
+
+If a cache layer cannot speak org tags, **do not cache the route**.

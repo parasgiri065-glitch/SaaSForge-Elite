@@ -17,7 +17,8 @@
     "supabase:migrate": "supabase db push",
     "supabase:seed": "supabase db execute --file supabase/seed.sql",
     "supabase:reset": "supabase db reset",
-    "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhooks/stripe"
+    "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhooks/stripe",
+    "pack:enterprise": "bash scripts/pack-enterprise-assets.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

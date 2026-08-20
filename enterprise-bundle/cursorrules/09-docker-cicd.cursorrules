@@ -1,0 +1,71 @@
+# Multi-stage Docker & CI/CD — production contract
+
+pnpm in, npm out. Node **20.11+**. The Vercel project slug must be
+`saasforge-elite` (lowercase). Do not bake secrets into images.
+
+## Multi-stage Dockerfile (client deploys)
+
+```dockerfile
+# syntax=docker/dockerfile:1
+FROM node:20.11-bookworm-slim AS deps
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+FROM deps AS build
+COPY . .
+# Public env may be inlined at build. Secrets stay out.
+ARG NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+RUN pnpm typecheck && pnpm lint && pnpm test && pnpm build
+
+FROM node:20.11-bookworm-slim AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN useradd --system --uid 1001 nextjs
+COPY --from=build --chown=nextjs:nextjs /app/.next/standalone ./
+COPY --from=build --chown=nextjs:nextjs /app/.next/static ./.next/static
+COPY --from=build --chown=nextjs:nextjs /app/public ./public
+USER nextjs
+EXPOSE 3000
+CMD ["node", "server.js"]
+```
+
+Enable `output: "standalone"` in `next.config.ts` only for Docker
+targets — Vercel does not need it.
+
+- Bind `0.0.0.0`, not `127.0.0.1`.
+- Do not `COPY .env`. Pass runtime secrets with the orchestrator
+  (`STRIPE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
+  `LEMONSQUEEZY_WEBHOOK_SECRET`, `GITHUB_PAT_TOKEN`).
+- `.dockerignore`: `node_modules`, `.next`, `.git`, `.env*`,
+  `enterprise-assets.zip`.
+
+## CI (GitHub Actions)
+
+Jobs, in order: **lint → typecheck → test → build**. Fail the pipeline
+on the first red. pnpm via corepack. Cache `.pnpm-store`.
+
+- Pull requests: no production secrets. Unit tests only.
+- `main`: build, then deploy (Vercel or the container registry).
+- Never echo env values. `YOUR_` placeholders must fail Zod in a
+  dedicated “env schema” job if you inject dummy secrets.
+- Playwright: a follow-on job with browsers, against a preview URL.
+
+## Vercel
+
+- Project name: **`saasforge-elite`**.
+- `vercel.json`: `installCommand` `pnpm install --frozen-lockfile`,
+  `buildCommand` `pnpm build`.
+- Production env must not contain `YOUR_`.
+- Webhook URLs:
+  - Stripe: `/api/webhooks/stripe` (and `/api/stripe/webhook` rewrite)
+  - Lemon Squeezy: `/api/webhooks/lemonsqueezy`
+
+## Releases
+
+- Do not rewrite git history.
+- Do not commit `.env`, `.env.local`, `.env.production`, or real keys.
+- Enterprise zip is generated (`pnpm pack:enterprise`), not hand-edited.

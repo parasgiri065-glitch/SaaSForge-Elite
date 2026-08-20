@@ -43,3 +43,6 @@ next-env.d.ts
 # supabase local
 supabase/.temp/
 supabase/.branches/
+
+# generated enterprise zip (rebuild with pnpm pack:enterprise)
+/enterprise-assets.zip

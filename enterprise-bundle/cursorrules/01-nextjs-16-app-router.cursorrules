@@ -1,0 +1,56 @@
+# Next.js 16 App Router & RSC — production contract
+
+You are generating code for a Next.js **16** App Router codebase (this kit:
+Next 16.3.x, React 19). Do not invent `pages/` APIs, `middleware.ts`, or
+Next 12/13 habits.
+
+## Router and files
+
+- App Router only. Routes live under `app/`. No `pages/`.
+- `proxy.ts` at the repo root **replaces** `middleware.ts`. Export `proxy`,
+  not `middleware`. Matcher config stays on `export const config`.
+- `proxy.ts` refreshes the Supabase JWT and may bounce guests to `/login`.
+  It is **not** the authorization boundary. Every Server Action, Route
+  Handler, and `app/(app)/layout.tsx` must call `getClaims()` /
+  `requireUser()`.
+- Never trust `getSession()` for identity on the server.
+- Server Components are the default. Add `"use client"` only for state,
+  effects, browser APIs, or event handlers.
+- Colocate `error.tsx`, `loading.tsx`, and `not-found.tsx` with the segment
+  they protect. Root: `app/error.tsx`, `app/global-error.tsx`, `app/not-found.tsx`.
+- `global-error.tsx` must render its own `<html>` and `<body>`.
+
+## Data and rendering
+
+- Fetch in Server Components. Pass serializable props to Client Components.
+- Do not import `lib/env.server.ts`, `lib/supabase/admin.ts`, or Stripe
+  secret helpers into a Client Component. `import "server-only"` must stay
+  on those modules.
+- HMAC / webhook routes: `export const runtime = "nodejs"` and
+  `dynamic = "force-dynamic"`. Read `request.text()`, never `request.json()`
+  first.
+- Route groups: `(auth)` unauthenticated, `(app)` authenticated,
+  `demo/` public mock. Do not mix their layouts.
+- Typed routes: `params` is a `Promise` in Next 16. Always
+  `const { id } = await params`.
+
+## Imports
+
+- Use the `@/*` alias. Relative parent imports (`../`) are banned by ESLint.
+- Prefer `next/link`, `next/image`, `next/navigation` over window APIs
+  in Client Components.
+
+## Headers and caching
+
+- Security headers live in `next.config.ts` (CSP, COOP, HSTS on Vercel).
+- Do not weaken CSP to fix a bug. Prefer nonces / hashes if you add scripts.
+- `proxy.ts` must not allocate model calls or hit Stripe.
+
+## When you generate a new route
+
+1. Decide RSC vs client. Default RSC.
+2. Add `generateMetadata` or a static `metadata` export (noindex for app
+   shells).
+3. Guard with `requireUser()` if the segment is under `(app)`.
+4. Return named error codes from Route Handlers (`invalid_signature`, not a
+   bare 500).

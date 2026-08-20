@@ -1,0 +1,55 @@
+# Tailwind CSS & Radix UI — production design contract
+
+SaaSForge Elite’s **core UI is native Tailwind + inline SVGs**
+(`components/ui/button.tsx`, `lib/ui/layout-classes.ts`). Do not add shadcn
+or a second icon pack to the kit itself unless the product owner asks.
+
+When a **client project** (Enterprise license) adds Radix, follow this
+contract so a11y and theming stay coherent.
+
+## Tailwind (this kit and client apps)
+
+- Tailwind **v4** (`@import "tailwindcss"`, `@theme` in `app/globals.css`).
+  No `tailwind.config.ts` required for the core kit.
+- Semantic class maps live in `lib/ui/layout-classes.ts`. Do not paste
+  8-class strings into five screens — extract a variant helper
+  (`navLinkClassName`, `chatBubbleClassName`).
+- Join classes with `cn()` in `lib/ui/cn.ts`. Do not add `clsx` /
+  `tailwind-merge` unless conflict resolution is actually needed.
+- Dark mode: `html.dark` toggled by `useThemePreference` + inline boot
+  script. Use `dark:` variants, not a second stylesheet.
+- No inline `style={{}}` except runtime values (tilt transform, CSS
+  variables). Prefer tokens: `--color-accent`, `glass-panel`.
+- Focus: visible rings on every interactive control. Do not
+  `outline-none` without a replacement.
+
+## Forms and content
+
+- Every input has a `<label htmlFor>` (see `components/ui/text-field.tsx`).
+- Errors use `role="alert"`. Pending buttons disable and announce state.
+- Self-closing JSX: `<input />`, `<img />`, `<hr />`.
+
+## Radix (client projects only)
+
+If you add `@radix-ui/react-*`:
+
+- Own **behavior** (focus trap, dismiss, arrow keys, `aria-*`). Own
+  **look** with Tailwind. Do not import Radix themes or a copy-paste
+  shadcn `components/ui` dump into this kit’s `components/ui`.
+- Prefer these primitives when the native element is insufficient:
+  Dialog, DropdownMenu, Popover, Tooltip, Tabs, Checkbox, Switch.
+- Controlled state stays in a hook (`useComposerDraft` pattern). The
+  Radix root only receives `open` / `onOpenChange`.
+- Portals must render inside the app shell so theme class `dark`
+  still applies.
+- `modal={true}` dialogs must lock body scroll (see
+  `useMobileNavigation`) and restore it on unmount.
+- Do not nest two modal focus traps.
+- Keep bundle cost honest: import the primitive, not `@radix-ui/react`.
+
+## Motion and marketing
+
+- Landing motion is CSS (`animate-rise`, `animate-aurora`). Do not add
+  Framer Motion for a fade-in.
+- The product look is Linear-like SaaS, **not** a video-editor /
+  film-portfolio aesthetic.

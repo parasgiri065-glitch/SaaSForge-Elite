@@ -1,0 +1,47 @@
+# Strict TypeScript & Zod — production contract
+
+`any` is a product defect. This kit compiles with `strict`, `noImplicitAny`,
+`strictNullChecks`, `noUncheckedIndexedAccess`, `useUnknownInCatchVariables`.
+ESLint errors on `TSAnyKeyword`, `@ts-ignore`, `@ts-nocheck`, and double
+assertions (`as unknown as T`).
+
+## Types
+
+- Prefer `type` aliases for objects that must satisfy
+  `Record<string, unknown>` (Supabase `Database` rows). Interfaces lack
+  implicit index signatures.
+- Domain types live in `types/` (`database.ts`, `auth.ts`, `billing.ts`,
+  `rbac.ts`, `agent.ts`). Do not declare throwaway shapes in UI files.
+- Catch bindings are `unknown`. Run them through
+  `isolateUnknownError(error, "stable_code")` before any UI or JSON alert.
+- JSON.parse returns `any` in TypeScript. Always wrap with
+  `parseJsonUnknown()` so the value is `unknown`, then Zod-parse.
+- Exhaustive `switch` on discriminated unions. Use `never` in the default
+  branch when the union is closed; unknown Stripe/Lemon event types may
+  `return` instead of throwing.
+- Do not use non-null assertions (`!`). Narrow or return early.
+- Insert/Update types for tables must be `Pick` / `Partial` of the Row type
+  so a made-up column fails the build (`AssertKeysSubset`).
+
+## Zod
+
+- Zod 4 is the parser (`zod` ^4). Do not add Zod 3 APIs (`ZodError.errors`
+  shape differs).
+- Every trust boundary has a schema in `lib/security/api-schemas.ts` or
+  `lib/auth/schemas.ts`:
+  - query strings (OAuth `next` must match `^\/(?!\/)[A-Za-z0-9/_-]*$`)
+  - JSON bodies (`emptyJsonBodySchema` is `.strict()` — extra keys are 400)
+  - webhook envelopes (after HMAC, never before)
+  - env (`lib/security/env-schema.ts`)
+- `safeParse` at the edge. Do not `parse()` in a Route Handler unless you
+  catch and map to a named 400.
+- Env placeholders containing `YOUR_` are rejected. Do not “fix” that refine.
+- Infer types with `z.infer<typeof schema>`. Keep a compile-time
+  `AssertEqual<z.infer<typeof rowSchema>, Row>` for SQL-shaped objects.
+
+## Errors
+
+- Named machine codes in JSON: `{ error: "invalid_signature" }`.
+- HTTP mapping: 400 inspect/HMAC/Zod, 401 no user, 403 role, 409 missing
+  Stripe customer, 500 after a verified event failed to apply.
+- Never send stack traces, raw webhook bodies, or secrets to the client.

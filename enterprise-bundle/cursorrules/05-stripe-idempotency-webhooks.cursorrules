@@ -1,0 +1,61 @@
+# Stripe idempotency & webhook lifecycle — production contract
+
+Webhooks are the only writer of `subscriptions`. The browser never sends a
+Stripe customer id. HMAC first, JSON second.
+
+## Inbound lifecycle (already implemented)
+
+```
+POST /api/webhooks/stripe
+  1. request.text()                         → 400 invalid_body
+  2. inspectWebhookRequest(raw, signature)  → 400 empty / too large / missing sig
+  3. stripe.webhooks.constructEvent(...)    → 400 invalid_signature
+  4. claimStripeWebhookEvent(event.id)      → 200 duplicate if processed_at set
+  5. processStripeEvent (discriminated union on event.type)
+  6. mark processed_at  or  mark error + 500
+```
+
+Rewrite: `/api/stripe/webhook` → `/api/webhooks/stripe` (`next.config.ts`).
+
+## Rules
+
+- `runtime = "nodejs"`, `dynamic = "force-dynamic"`.
+- Max body 1_048_576 bytes **before** crypto.
+- Never `JSON.parse` / `request.json()` before `constructEvent`.
+- `stripe_webhook_events.id` = Stripe `event.id`. Unique. Retries must be
+  safe. A row with `processed_at` and no `error` is a successful duplicate
+  (HTTP 200, `{ status: "duplicate" }`).
+- Service-role client (`createAdminClient`) only **after** signature
+  verify. Comment that in every new billing writer.
+- Handled types today: `invoice.paid`, `customer.subscription.created|updated|deleted`,
+  `checkout.session.completed`. Unknown types no-op 200 after claim.
+- Map Stripe objects through `lib/stripe/webhook-payload.ts` (unknown →
+  records). Do not `as Stripe.Invoice` — Next 16 / Stripe 22 events are a
+  discriminated union; `switch (event.type)` narrows `data.object`.
+- One `subscriptions` row per `organization_id` (`onConflict: organization_id`).
+- Customer id lives on `organizations.stripe_customer_id`.
+
+## Portal
+
+- `POST /api/stripe/portal` body must be empty or `{}`
+  (`inspectEmptyJsonBody`). Extra keys → 400 `unexpected_body`.
+- Authz is pure: `decidePortalAccess` → 401 / 403 / 409 `no_customer`.
+  Roles: `owner | admin | billing`.
+- Catch → `isolateUnknownError(error, "portal_failed")` then JSON
+  `{ error: code }`.
+
+## Idempotency for new Stripe writes
+
+- Checkout Session `client_reference_id` / metadata `organization_id`
+  must already exist as an org row. Do not create tenants from Stripe
+  metadata alone.
+- Store Stripe request idempotency keys (`Idempotency-Key` header) for
+  any POST you originate (checkout session create). Use `randomId()` from
+  Web Crypto, never `Math.random()`.
+
+## Lemon Squeezy (store fulfillment)
+
+Same HMAC discipline: raw body, `X-Signature`,
+`verifyLemonSqueezySignature` (Node `crypto.timingSafeEqual`). Invite
+GitHub collaborators only after verify. Missing `github_username` → 200
+`skipped` (do not 500-retry forever). GitHub 5xx → 500 so Lemon retries.

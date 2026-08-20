@@ -1,0 +1,49 @@
+# LangChain & AI streaming — production contract
+
+The model never holds tenant keys. Tools receive `organization_id` from the
+**server** after `requireUser()`. The browser never sees `OPENAI_API_KEY`.
+
+## What ships today
+
+- UI: `ChatViewport` + `useAgentStream` + streaming-safe markdown
+  (`lib/markdown/parse.ts`). Incomplete fences stay open code blocks.
+- Demo: `simulateAgentTokenStream` (Web Crypto `randomInt`, no
+  `Math.random`). Composer locks while `isStreaming` (`useComposerDraft`).
+- Abort: `AbortController` on Stop. `AbortError` is not an error bubble.
+
+## When you wire `POST /api/ai/stream`
+
+1. `runtime = "nodejs"`. Auth with `getVerifiedTenantUser()`. Reject
+   `viewer` if the product rule is member+.
+2. Zod the prompt (`agentPromptSchema`, max 8000).
+3. Entitlement + rate limit **before** allocating a model client.
+4. Bind tools with a frozen `ctx: { organizationId, userId, role }`.
+   Tool SQL must `.eq("organization_id", ctx.organizationId)`. The model
+   must not pass `organization_id`.
+5. Stream `text/event-stream` (or a TransformStream of text deltas).
+   Events: `{ type: "delta", text } | { type: "done" } | { type: "error", message }`
+   (`types/agent.ts`).
+6. Persist `agent_runs` + tool traces **org-scoped** if you add that
+   table (migration + RLS). Abort the reader when `request.signal` fires.
+7. Never return the raw tool error to the client if it contains SQL or
+   keys. Map to `stream_failed`.
+8. `OPENAI_API_KEY` from `serverEnv.openaiApiKey` only.
+
+## Client protocol
+
+- `useAgentStream.send` remains the only network entry. Do not fetch
+  OpenAI from the browser.
+- Autoscroll is `useStickToBottomScroll` (UI state), not the stream hook.
+- Markdown renderer must tolerate partial tokens (this is why we do not
+  use `dangerouslySetInnerHTML` with a full markdown lib on each chunk).
+- Tool-call UI (`ToolCallTrace`) is decorative until the server emits
+  real traces — do not fake success.
+
+## LangChain specifics
+
+- Pin a single LangChain major. Prefer the official OpenAI chat model
+  wrapper over ad-hoc fetch.
+- Structured output = Zod schema, not `JSON.parse(modelText)`.
+- Timeouts and max tokens are server constants, not prompt-injected.
+- If LangSmith is on (`LANGCHAIN_TRACING_V2`), redact PII in traces.
+  Never trace raw webhook bodies or JWTs.

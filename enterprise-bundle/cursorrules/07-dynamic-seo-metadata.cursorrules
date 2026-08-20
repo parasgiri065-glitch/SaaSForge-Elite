@@ -1,0 +1,51 @@
+# Dynamic SEO & metadata — production contract
+
+Marketing pages are indexable. The authenticated shell is not. Demo routes
+are not. Get this wrong and you ship customer dashboards to Google.
+
+## App Router metadata
+
+- Root `app/layout.tsx` exports `metadata` with `title.default` /
+  `title.template` from `publicEnv.appName`.
+- Authenticated and demo pages set:
+
+  ```ts
+  export const metadata: Metadata = {
+    title: "Billing",
+    robots: { index: false, follow: false },
+  };
+  ```
+
+- Use `generateMetadata` when the title depends on params or data
+  (`agents/[agentId]`). Await `params`. Return `robots: { index: false }`
+  for any session-scoped page.
+- Canonical URLs, when added, must use `publicEnv.appUrl` (no trailing
+  slash) + pathname. Never use `localhost` in production metadata.
+- Open Graph / Twitter: one helper later (`lib/seo.ts` if you add it).
+  Do not copy-paste OG fields on every page.
+- `app/page.tsx` (landing) is the only page that should be indexed unless
+  you add `/pricing` or docs.
+
+## What not to index
+
+- `/dashboard`, `/agents`, `/settings/*`
+- `/demo/*`
+- `/login`, `/signup`, `/callback`
+- `/api/*` (Route Handlers are not documents; still send `Cache-Control:
+  no-store` on health)
+
+## When you add sitemap / robots / OG
+
+- `app/sitemap.ts` — only public marketing URLs.
+- `app/robots.ts` — disallow `/dashboard`, `/settings`, `/demo`, `/api`.
+- OG image route must not render tenant data. No cookies in the image
+  generator. If you need a branded OG, use public copy only.
+- JSON-LD: `SoftwareApplication` / `Organization` on the landing page
+  only. Do not emit JSON-LD from the dashboard.
+
+## Social and share safety
+
+- `Referrer-Policy: strict-origin-when-cross-origin` is already set.
+- Do not put API keys, org slugs of paying customers, or invoice numbers
+  in `<title>` or `og:description`.
+- `noindex` is a hint, not a security control. RLS still applies.

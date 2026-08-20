@@ -1,0 +1,51 @@
+# Automated testing (Jest & Playwright) — production contract
+
+This repository’s **unit runner is Vitest** (`pnpm test`). Vitest is Jest-
+compatible (describe/it/expect/vi). Enterprise client projects may run
+Jest for units and **must** run Playwright for browser paths that touch
+money or tenancy.
+
+## Unit / integration (Jest or Vitest)
+
+- Pure functions only in Node. Do not mount React unless you add
+  Testing Library and a jsdom project.
+- Import via `@/` — the same ESLint boundary as app code.
+- Cover at least:
+  - `readSubjectFromClaims` (expired / empty / valid)
+  - `decidePortalAccess` (401 / 403 / 409 / grant)
+  - `inspectWebhookRequest` + Lemon HMAC (`verifyLemonSqueezySignature`)
+  - Zod open-redirect (`oauthCallbackQuerySchema`)
+  - row schemas vs SQL keys
+  - `isolateUnknownError`
+- `vi.fn()` for loaders. Never hit live Stripe or GitHub in unit tests.
+- Inject `fetchImpl` (see `inviteGithubCollaborator`) instead of mocking
+  globals when you can.
+- No `any`. No `as unknown as Stripe.Invoice` — pass structural fixtures
+  into parsers that accept `unknown`.
+- File names: `tests/<area>/<name>.test.ts`. Included in `pnpm typecheck`.
+
+## Playwright (E2E) — add as `tests/e2e/`
+
+When you add Playwright to a client app:
+
+- Separate project. `testDir: tests/e2e`. Do not mix with Vitest include.
+- Store auth as a saved storageState **per tenant**. Never reuse cookies
+  across orgs.
+- Critical paths:
+  1. Signup → dashboard shows **that** org name.
+  2. Viewer cannot open billing portal (403 UI).
+  3. Owner billing: Manage Subscription disabled without customer; enabled
+     with a stub.
+  4. Webhook: do not call Stripe live. Hit a test helper or mock
+     `constructEvent` at the boundary.
+  5. Cross-tenant: user A’s session cannot `GET` user B’s billing page.
+- `baseURL` from `PLAYWRIGHT_BASE_URL` or `http://localhost:3000`.
+- CI: install browsers in the pipeline image, not on the laptop of record.
+- Fail on `console.error` that contains `YOUR_` or `sk_live`.
+- Screenshots on failure only. Do not commit snapshots of customer PII.
+
+## What “green” means
+
+`pnpm lint && pnpm typecheck && pnpm test` must pass before merge.
+Playwright is additive; a red E2E on tenancy is a release blocker, not a
+quarantine.

@@ -1,0 +1,53 @@
+# Supabase RLS & multi-tenancy — production contract
+
+The tenant is `organizations.id`. Every persisted row carries
+`organization_id`. There is no “default workspace”. The Stripe customer is
+**per organization**, never per user.
+
+## Clients
+
+| Module | Key | RLS | Who may import |
+| --- | --- | --- | --- |
+| `lib/supabase/client.ts` | anon / publishable | on | Client Components only |
+| `lib/supabase/server.ts` | anon + cookies | on | Server Components, Route Handlers, `requireUser` |
+| `lib/supabase/admin.ts` | **service_role** | bypass | After an independent trust check (verified Stripe/Lemon HMAC, cron secret). `import "server-only"`. |
+| `lib/supabase/proxy.ts` | anon + request cookies | on | `proxy.ts` only |
+
+Never put `SUPABASE_SERVICE_ROLE_KEY` in a Client Component or
+`NEXT_PUBLIC_*` variable.
+
+## Identity
+
+- Server identity = `supabase.auth.getClaims()`, then
+  `readSubjectFromClaims` → `loadTenantUser`.
+- `getSession()` is not proof of identity (can be stale / spoofable on the
+  server).
+- `loadTenantUser` parses PostgREST embeds with Zod row schemas
+  (`lib/supabase/row-schemas.ts`). Do not `as UserJoinRow`.
+- Inactive members (`is_active = false`) are not `isUsableTenantUser`.
+
+## SQL / RLS
+
+- New tables: numbered migration under `supabase/migrations/`,
+  `enable row level security` **and** `force row level security`.
+- Default deny. Grant `authenticated` only the verbs they need.
+  Billing writes (`subscriptions`, `stripe_webhook_events`) stay
+  service-role only.
+- Policies must compare `organization_id` to
+  `public.user_organization_id()` (SECURITY DEFINER helper). Do not read
+  `organization_id` from the client body to *join* a tenant.
+- Invites require a verified token. Signup trigger
+  `handle_new_user()` always creates a **new** org as `owner`. Forged
+  `organization_id` in user metadata must be ignored.
+- Roles: `owner | admin | member | billing | viewer`. Enforce in RLS
+  (`user_has_role`) **and** in server code (`hasRole`,
+  `decidePortalAccess`).
+
+## Queries
+
+- Every `.from("…")` in user-scoped code relies on RLS. Still pass
+  `.eq("organization_id", orgId)` when the query is not already implied,
+  so a missing policy fails closed in review.
+- Select lists should be explicit when joining (`profiles (*)`,
+  `organizations (*)`).
+- Do not log access tokens, service-role keys, or full JWT payloads.
