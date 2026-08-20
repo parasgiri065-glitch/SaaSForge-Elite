@@ -7,7 +7,8 @@ import type { Database } from "@/types/database";
 
 /**
  * Service-role client. Bypasses RLS.
- * Use only after an independent trust check (verified Stripe signature, cron secret).
+ * Call only after an independent trust check (verified Stripe signature).
+ * Never import this module from Client Components — `server-only` will throw.
  */
 export function createAdminClient() {
   return createClient<Database>(

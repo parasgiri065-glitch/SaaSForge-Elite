@@ -1,22 +1,23 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { oauthCallbackQuerySchema } from "@/lib/security/api-schemas";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const code = url.searchParams.get("code");
-  const nextParam = url.searchParams.get("next");
-  const next =
-    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
-      ? nextParam
-      : "/dashboard";
+  const parsed = oauthCallbackQuerySchema.safeParse({
+    code: url.searchParams.get("code") ?? undefined,
+    next: url.searchParams.get("next") ?? undefined,
+  });
 
-  if (!code) {
-    return NextResponse.redirect(new URL("/login?error=missing_code", url.origin));
+  if (!parsed.success) {
+    return NextResponse.redirect(new URL("/login?error=invalid_callback", url.origin));
   }
+
+  const next = parsed.data.next ?? "/dashboard";
 
   try {
     const supabase = await createServerSupabaseClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(parsed.data.code);
     if (error) {
       return NextResponse.redirect(new URL("/login?error=auth_callback", url.origin));
     }

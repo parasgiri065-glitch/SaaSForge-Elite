@@ -5,6 +5,7 @@ import { processStripeEvent } from "@/lib/stripe/webhook";
 import { inspectWebhookRequest } from "@/lib/stripe/webhook-request";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { serverEnv } from "@/lib/env.server";
+import { stripeEventMetaSchema } from "@/lib/security/api-schemas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,6 +52,11 @@ export async function POST(request: Request) {
     const message = error instanceof Error ? error.message : "invalid signature";
     console.error("[stripe.webhook] signature verification failed", message);
     return json(400, { error: "invalid_signature" });
+  }
+
+  const meta = stripeEventMetaSchema.safeParse({ id: event.id, type: event.type });
+  if (!meta.success) {
+    return json(400, { error: "invalid_event" });
   }
 
   const admin = createAdminClient();

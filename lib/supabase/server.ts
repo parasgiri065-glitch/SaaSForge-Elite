@@ -3,6 +3,10 @@ import { cookies } from "next/headers";
 import { requirePublicEnv } from "@/lib/env";
 import type { Database } from "@/types/database";
 
+/**
+ * User-scoped server client (anon key). RLS is enforced on every query.
+ * Never use createAdminClient() from Server Components or user routes.
+ */
 export async function createServerSupabaseClient() {
   const cookieStore = await cookies();
 

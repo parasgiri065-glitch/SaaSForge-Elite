@@ -1,19 +1,33 @@
 /**
  * Public environment. Safe to import from Client Components.
- * Server secrets live in `lib/env.server.ts` (blocked from the client bundle).
+ * Parsed through Zod — never trust raw process.env in feature code.
  */
-export const publicEnv = {
-  appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-  appName: process.env.NEXT_PUBLIC_APP_NAME ?? "SaaSForge Elite",
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  supabaseAnonKey:
+import { publicEnvSchema } from "@/lib/security/env-schema";
+
+const parsed = publicEnvSchema.parse({
+  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+  NEXT_PUBLIC_SUPABASE_ANON_KEY:
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
     "",
-  stripePublishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "",
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
+  NEXT_PUBLIC_DEMO_MODE: process.env.NEXT_PUBLIC_DEMO_MODE,
+});
+
+export const publicEnv = {
+  appUrl: parsed.NEXT_PUBLIC_APP_URL,
+  appName: parsed.NEXT_PUBLIC_APP_NAME,
+  supabaseUrl: parsed.NEXT_PUBLIC_SUPABASE_URL,
+  supabaseAnonKey: parsed.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  stripePublishableKey: parsed.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
 } as const;
 
-export const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+export const isDemoMode = parsed.NEXT_PUBLIC_DEMO_MODE === "true";
 
 export function requirePublicEnv(name: keyof typeof publicEnv): string {
   const value = publicEnv[name];

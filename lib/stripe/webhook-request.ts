@@ -1,7 +1,11 @@
+import { stripeSignatureSchema } from "@/lib/security/api-schemas";
+
+export const MAX_WEBHOOK_BYTES = 1_048_576;
+
 export type WebhookRequestDenial = {
   ok: false;
   status: 400;
-  error: "empty_body" | "missing_stripe_signature";
+  error: "empty_body" | "missing_stripe_signature" | "payload_too_large" | "invalid_signature";
 };
 
 export type WebhookRequestGrant = {
@@ -20,8 +24,12 @@ export function inspectWebhookRequest(
   if (rawBody.length === 0) {
     return { ok: false, status: 400, error: "empty_body" };
   }
-  if (!signature || signature.trim().length === 0) {
+  if (rawBody.length > MAX_WEBHOOK_BYTES) {
+    return { ok: false, status: 400, error: "payload_too_large" };
+  }
+  const parsed = stripeSignatureSchema.safeParse(signature);
+  if (!parsed.success) {
     return { ok: false, status: 400, error: "missing_stripe_signature" };
   }
-  return { ok: true, rawBody, signature };
+  return { ok: true, rawBody, signature: parsed.data };
 }

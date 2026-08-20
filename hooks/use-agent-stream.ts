@@ -2,6 +2,8 @@
 
 import { useCallback, useRef, useState } from "react";
 import type { ChatMessage } from "@/types/agent";
+import { agentPromptSchema } from "@/lib/security/api-schemas";
+import { randomId, randomInt } from "@/lib/crypto/random";
 
 const DEMO_REPLY = `I can help you ship this workspace faster.
 
@@ -18,7 +20,7 @@ await db.from("projects").select("*").eq("organization_id", orgId);
 Ask me anything about *SaaSForge Elite* — auth, Stripe, or the agent pipeline.`;
 
 function createId(): string {
-  return globalThis.crypto.randomUUID();
+  return randomId();
 }
 
 function nowIso(): string {
@@ -34,12 +36,12 @@ async function simulateStream(
     if (signal.aborted) {
       throw new DOMException("Aborted", "AbortError");
     }
-    const size = offset < 24 ? 2 : 1 + Math.floor(Math.random() * 4);
+    const size = offset < 24 ? 2 : 1 + randomInt(4);
     const next = DEMO_REPLY.slice(offset, offset + size);
     offset += size;
     onDelta(next);
     await new Promise((resolve) => {
-      window.setTimeout(resolve, 16 + Math.floor(Math.random() * 22));
+      window.setTimeout(resolve, 16 + randomInt(22));
     });
   }
 }
@@ -61,10 +63,11 @@ export function useAgentStream() {
   }, []);
 
   const send = useCallback(async (prompt: string) => {
-    const trimmed = prompt.trim();
-    if (!trimmed || abortRef.current) {
+    const parsed = agentPromptSchema.safeParse(prompt);
+    if (!parsed.success || abortRef.current) {
       return;
     }
+    const trimmed = parsed.data;
 
     const userMessage: ChatMessage = {
       id: createId(),

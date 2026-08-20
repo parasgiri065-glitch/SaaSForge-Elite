@@ -30,4 +30,13 @@ describe("inspectWebhookRequest", () => {
       signature: "t=1,v1=abc",
     });
   });
+
+  it("rejects oversized payloads before signature verification", () => {
+    const huge = "x".repeat(1_048_577);
+    expect(inspectWebhookRequest(huge, "t=1,v1=abc")).toEqual({
+      ok: false,
+      status: 400,
+      error: "payload_too_large",
+    });
+  });
 });
