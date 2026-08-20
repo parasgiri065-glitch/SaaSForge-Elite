@@ -1,4 +1,4 @@
-import type Stripe from "stripe";
+import { readObjectRecord } from "@/lib/types/object-record";
 import { toIso } from "@/lib/stripe/map-status";
 
 export type SubscriptionBillingPeriod = {
@@ -11,18 +11,7 @@ export type SubscriptionItemPriceIds = {
   stripeProductId: string | null;
 };
 
-/**
- * Narrow an unknown Stripe object to a plain record, or `null`.
- *
- * @param value - A Stripe SDK object or primitive.
- * @returns The object as a string-keyed record, or `null` when not an object.
- */
-export function readObjectRecord(value: unknown): Record<string, unknown> | null {
-  if (typeof value === "object" && value !== null) {
-    return value as Record<string, unknown>;
-  }
-  return null;
-}
+export type StripeCustomerReference = string | { id: string } | null | undefined;
 
 /**
  * Read a Unix-seconds field from a Stripe record.
@@ -41,17 +30,19 @@ export function readUnixTimestampField(
 
 /**
  * Current billing period on a Subscription (item first, then the parent).
- * Stripe 2025+ stores period timestamps on the subscription item.
+ * Accepts `unknown` so Stripe SDK snapshots and test fixtures share one path.
  *
- * @param subscription - A retrieved Stripe Subscription.
+ * @param subscription - A retrieved Stripe Subscription (or a structural stand-in).
  * @returns ISO timestamps for period start/end, each nullable.
  */
 export function readSubscriptionBillingPeriod(
-  subscription: Stripe.Subscription,
+  subscription: unknown,
 ): SubscriptionBillingPeriod {
-  const firstItem = subscription.items.data[0];
-  const itemRecord = firstItem ? readObjectRecord(firstItem) : null;
   const subscriptionRecord = readObjectRecord(subscription) ?? {};
+  const itemsRecord = readObjectRecord(subscriptionRecord["items"]);
+  const itemList = itemsRecord?.["data"];
+  const firstItem = Array.isArray(itemList) ? itemList[0] : undefined;
+  const itemRecord = readObjectRecord(firstItem);
 
   const periodStartUnix =
     readUnixTimestampField(itemRecord ?? {}, "current_period_start") ??
@@ -69,9 +60,7 @@ export function readSubscriptionBillingPeriod(
  * @param customer - An expanded Customer, a deleted customer, an id, or null.
  * @returns The `cus_…` id, or `null` when Stripe omitted the customer.
  */
-export function readStripeCustomerId(
-  customer: string | Stripe.Customer | Stripe.DeletedCustomer | null,
-): string | null {
+export function readStripeCustomerId(customer: StripeCustomerReference): string | null {
   if (!customer) {
     return null;
   }
@@ -81,10 +70,10 @@ export function readStripeCustomerId(
 /**
  * Pull the related subscription id off an Invoice (top-level or parent details).
  *
- * @param invoice - A Stripe Invoice from `invoice.paid`.
+ * @param invoice - A Stripe Invoice (or a structural stand-in).
  * @returns The `sub_…` id, or `null` when the invoice is not subscription-backed.
  */
-export function readInvoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
+export function readInvoiceSubscriptionId(invoice: unknown): string | null {
   const invoiceRecord = readObjectRecord(invoice);
   const direct = invoiceRecord?.["subscription"];
   if (typeof direct === "string") {
@@ -111,19 +100,33 @@ export function readInvoiceSubscriptionId(invoice: Stripe.Invoice): string | nul
 /**
  * Price and product ids from the first subscription item.
  *
- * @param subscription - A retrieved Stripe Subscription.
+ * @param subscription - A retrieved Stripe Subscription (or a structural stand-in).
  * @returns Nullable Stripe price/product ids for the org's current plan.
  */
 export function readFirstSubscriptionItemIds(
-  subscription: Stripe.Subscription,
+  subscription: unknown,
 ): SubscriptionItemPriceIds {
-  const price = subscription.items.data[0]?.price;
-  if (!price) {
+  const subscriptionRecord = readObjectRecord(subscription) ?? {};
+  const itemsRecord = readObjectRecord(subscriptionRecord["items"]);
+  const itemList = itemsRecord?.["data"];
+  const firstItem = Array.isArray(itemList) ? itemList[0] : undefined;
+  const itemRecord = readObjectRecord(firstItem);
+  const priceRecord = readObjectRecord(itemRecord?.["price"]);
+  if (!priceRecord || typeof priceRecord["id"] !== "string") {
     return { stripePriceId: null, stripeProductId: null };
   }
-  const product = price.product;
+  const product = priceRecord["product"];
+  const productRecord = readObjectRecord(product);
+  const productId =
+    typeof product === "string"
+      ? product
+      : typeof productRecord?.["id"] === "string"
+        ? productRecord["id"]
+        : null;
   return {
-    stripePriceId: price.id,
-    stripeProductId: typeof product === "string" ? product : (product?.id ?? null),
+    stripePriceId: priceRecord["id"],
+    stripeProductId: productId,
   };
 }
+
+export { readObjectRecord };

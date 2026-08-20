@@ -47,12 +47,19 @@ const eslintConfig = defineConfig([
           ],
         },
       ],
+      "@typescript-eslint/ban-ts-comment": "error",
+      "@typescript-eslint/no-non-null-assertion": "error",
       "no-restricted-syntax": [
         "error",
         {
           selector: "TSAnyKeyword",
           message:
             "The `any` type is banned. Use `unknown` and narrow, or a named domain type.",
+        },
+        {
+          selector: "TSAsExpression > TSAsExpression",
+          message:
+            "Double assertions (`as unknown as T`) are banned. Narrow with a type guard or Zod.",
         },
       ],
     },

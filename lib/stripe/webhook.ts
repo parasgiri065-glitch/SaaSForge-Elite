@@ -11,7 +11,8 @@ import {
 
 /**
  * Dispatch a verified Stripe event onto tenant billing tables.
- * The caller must already have verified the signature and claimed the event id.
+ * `Stripe.Event` is a discriminated union on `type`, so `data.object` is
+ * narrowed without assertions.
  *
  * @param stripeEvent - A `Stripe.Event` from `constructEvent` (never JSON.parse).
  * @returns Resolves after the matching handler (unknown types are ignored).
@@ -21,28 +22,19 @@ export async function processStripeEvent(stripeEvent: Stripe.Event): Promise<voi
 
   switch (stripeEvent.type) {
     case "invoice.paid":
-      await handleInvoicePaidEvent(
-        supabaseAdminClient,
-        stripeEvent.data.object as Stripe.Invoice,
-      );
+      await handleInvoicePaidEvent(supabaseAdminClient, stripeEvent.data.object);
       return;
     case "customer.subscription.deleted":
-      await handleSubscriptionDeletedEvent(
-        supabaseAdminClient,
-        stripeEvent.data.object as Stripe.Subscription,
-      );
+      await handleSubscriptionDeletedEvent(supabaseAdminClient, stripeEvent.data.object);
       return;
     case "customer.subscription.created":
     case "customer.subscription.updated":
-      await upsertOrganizationSubscription(
-        supabaseAdminClient,
-        stripeEvent.data.object as Stripe.Subscription,
-      );
+      await upsertOrganizationSubscription(supabaseAdminClient, stripeEvent.data.object);
       return;
     case "checkout.session.completed":
       await handleCheckoutSessionCompletedEvent(
         supabaseAdminClient,
-        stripeEvent.data.object as Stripe.Checkout.Session,
+        stripeEvent.data.object,
       );
       return;
     default:

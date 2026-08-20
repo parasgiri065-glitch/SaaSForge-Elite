@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type Stripe from "stripe";
 import {
   readFirstSubscriptionItemIds,
   readInvoiceSubscriptionId,
@@ -35,39 +34,39 @@ describe("readStripeCustomerId", () => {
   it("normalizes string and object customers", () => {
     expect(readStripeCustomerId(null)).toBeNull();
     expect(readStripeCustomerId("cus_abc")).toBe("cus_abc");
-    expect(readStripeCustomerId({ id: "cus_obj" } as Stripe.Customer)).toBe("cus_obj");
+    expect(readStripeCustomerId({ id: "cus_obj" })).toBe("cus_obj");
   });
 });
 
 describe("readInvoiceSubscriptionId", () => {
   it("reads a top-level string subscription", () => {
-    const invoice = { subscription: "sub_direct" } as unknown as Stripe.Invoice;
-    expect(readInvoiceSubscriptionId(invoice)).toBe("sub_direct");
+    expect(readInvoiceSubscriptionId({ subscription: "sub_direct" })).toBe("sub_direct");
   });
 
   it("reads nested parent.subscription_details.subscription", () => {
-    const invoice = {
-      parent: { subscription_details: { subscription: "sub_nested" } },
-    } as unknown as Stripe.Invoice;
-    expect(readInvoiceSubscriptionId(invoice)).toBe("sub_nested");
+    expect(
+      readInvoiceSubscriptionId({
+        parent: { subscription_details: { subscription: "sub_nested" } },
+      }),
+    ).toBe("sub_nested");
   });
 
   it("returns null when the invoice is not subscription-backed", () => {
-    const invoice = {} as unknown as Stripe.Invoice;
-    expect(readInvoiceSubscriptionId(invoice)).toBeNull();
+    expect(readInvoiceSubscriptionId({})).toBeNull();
   });
 });
 
 describe("readSubscriptionBillingPeriod", () => {
   it("prefers item timestamps over the parent", () => {
-    const subscription = {
-      items: {
-        data: [{ current_period_start: 100, current_period_end: 200 }],
-      },
-      current_period_start: 1,
-      current_period_end: 2,
-    } as unknown as Stripe.Subscription;
-    expect(readSubscriptionBillingPeriod(subscription)).toEqual({
+    expect(
+      readSubscriptionBillingPeriod({
+        items: {
+          data: [{ current_period_start: 100, current_period_end: 200 }],
+        },
+        current_period_start: 1,
+        current_period_end: 2,
+      }),
+    ).toEqual({
       periodStartIso: new Date(100_000).toISOString(),
       periodEndIso: new Date(200_000).toISOString(),
     });
@@ -76,20 +75,20 @@ describe("readSubscriptionBillingPeriod", () => {
 
 describe("readFirstSubscriptionItemIds", () => {
   it("returns nulls when there is no price", () => {
-    const subscription = { items: { data: [] } } as unknown as Stripe.Subscription;
-    expect(readFirstSubscriptionItemIds(subscription)).toEqual({
+    expect(readFirstSubscriptionItemIds({ items: { data: [] } })).toEqual({
       stripePriceId: null,
       stripeProductId: null,
     });
   });
 
   it("reads price and product ids from the first item", () => {
-    const subscription = {
-      items: {
-        data: [{ price: { id: "price_1", product: "prod_1" } }],
-      },
-    } as unknown as Stripe.Subscription;
-    expect(readFirstSubscriptionItemIds(subscription)).toEqual({
+    expect(
+      readFirstSubscriptionItemIds({
+        items: {
+          data: [{ price: { id: "price_1", product: "prod_1" } }],
+        },
+      }),
+    ).toEqual({
       stripePriceId: "price_1",
       stripeProductId: "prod_1",
     });

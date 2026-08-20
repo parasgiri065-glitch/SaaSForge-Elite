@@ -12,6 +12,7 @@ import {
 import { simulateAgentTokenStream } from "@/lib/agents/simulate-token-stream";
 import { agentPromptSchema } from "@/lib/security/api-schemas";
 import type { ChatMessage } from "@/types/agent";
+import { isolateUnknownError } from "@/lib/errors/isolate-unknown-error";
 
 export type AgentStreamState = {
   messages: ChatMessage[];
@@ -64,13 +65,13 @@ export function useAgentStream(): AgentStreamState {
       setMessages((currentMessages) =>
         completeAssistantMessage(currentMessages, assistantMessageId),
       );
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof DOMException && error.name === "AbortError") {
         return;
       }
-      const fallbackMessage = error instanceof Error ? error.message : "Stream failed";
+      const isolated = isolateUnknownError(error, "stream_failed");
       setMessages((currentMessages) =>
-        failAssistantMessage(currentMessages, assistantMessageId, fallbackMessage),
+        failAssistantMessage(currentMessages, assistantMessageId, isolated.message),
       );
     } finally {
       abortControllerRef.current = null;

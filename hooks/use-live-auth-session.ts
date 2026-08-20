@@ -7,6 +7,7 @@ import { loadTenantUser } from "@/lib/auth/load-tenant-user";
 import { signInSchema, signUpSchema } from "@/lib/auth/schemas";
 import { publicEnv } from "@/lib/env";
 import type { AuthContextValue, SignUpInput, TenantUser } from "@/types/auth";
+import { isolateUnknownError } from "@/lib/errors/isolate-unknown-error";
 
 /**
  * Live Supabase session + tenant hydration.
@@ -166,9 +167,10 @@ export function useLiveAuthSession(
       const { error } = await supabase.auth.signOut();
       await applyVerifiedAuthUser(null);
       return { error: error?.message ?? null };
-    } catch (error) {
+    } catch (error: unknown) {
       await applyVerifiedAuthUser(null);
-      return { error: error instanceof Error ? error.message : "sign_out_failed" };
+      const isolated = isolateUnknownError(error, "sign_out_failed");
+      return { error: isolated.message };
     }
   }, [applyVerifiedAuthUser, supabase]);
 

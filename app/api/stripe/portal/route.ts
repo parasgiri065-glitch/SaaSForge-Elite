@@ -4,6 +4,7 @@ import { decidePortalAccess } from "@/lib/billing/portal-access";
 import { publicEnv } from "@/lib/env";
 import { inspectEmptyJsonBody } from "@/lib/http/empty-json-body";
 import { jsonResponse } from "@/lib/http/json-response";
+import { isolateUnknownError } from "@/lib/errors/isolate-unknown-error";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,8 +42,10 @@ export async function POST(request: Request) {
       return jsonResponse(502, { error: "missing_portal_url" });
     }
     return NextResponse.json({ url: portalSession.url });
-  } catch {
-    return jsonResponse(500, { error: "portal_failed" });
+  } catch (error: unknown) {
+    const isolated = isolateUnknownError(error, "portal_failed");
+    console.error("[stripe.portal]", isolated);
+    return jsonResponse(500, { error: isolated.code });
   }
 }
 

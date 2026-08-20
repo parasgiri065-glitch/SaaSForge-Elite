@@ -1,8 +1,13 @@
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { loadTenantUser } from "@/lib/auth/load-tenant-user";
-import { isUsableTenantUser, resolveVerifiedTenantUser } from "@/lib/auth/guards";
+import {
+  claimsResultSchema,
+  isUsableTenantUser,
+  resolveVerifiedTenantUser,
+} from "@/lib/auth/guards";
 import type { TenantUser } from "@/types/auth";
+import { isolateUnknownError } from "@/lib/errors/isolate-unknown-error";
 
 /**
  * Server-side authorization boundary.
@@ -16,14 +21,20 @@ export async function getVerifiedTenantUser(): Promise<TenantUser | null> {
     return await resolveVerifiedTenantUser({
       getClaims: async () => {
         const result = await supabase.auth.getClaims();
-        return {
+        const parsed = claimsResultSchema.safeParse({
           data: result.data,
           error: result.error,
-        };
+        });
+        if (!parsed.success) {
+          return { data: null, error: { message: "invalid_claims" } };
+        }
+        return parsed.data;
       },
       loadUser: (userId) => loadTenantUser(supabase, userId),
     });
-  } catch {
+  } catch (error: unknown) {
+    const isolated = isolateUnknownError(error, "auth_lookup_failed");
+    console.error("[auth.requireUser]", isolated.code, isolated.name);
     return null;
   }
 }

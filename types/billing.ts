@@ -1,15 +1,10 @@
-import type { Subscription, SubscriptionStatus } from "@/types/database";
+import {
+  SUBSCRIPTION_STATUS_VALUES,
+  type Subscription,
+  type SubscriptionStatus,
+} from "@/types/database";
 
-export const SUBSCRIPTION_STATUSES = [
-  "incomplete",
-  "incomplete_expired",
-  "trialing",
-  "active",
-  "past_due",
-  "canceled",
-  "unpaid",
-  "paused",
-] as const satisfies readonly SubscriptionStatus[];
+export const SUBSCRIPTION_STATUSES = SUBSCRIPTION_STATUS_VALUES;
 
 /**
  * Type-guard a string as a known Postgres subscription status.
@@ -17,8 +12,10 @@ export const SUBSCRIPTION_STATUSES = [
  * @param value - Candidate status string.
  * @returns `true` when `value` is in `SUBSCRIPTION_STATUSES`.
  */
+const SUBSCRIPTION_STATUS_SET: ReadonlySet<string> = new Set(SUBSCRIPTION_STATUSES);
+
 export function isSubscriptionStatus(value: string): value is SubscriptionStatus {
-  return (SUBSCRIPTION_STATUSES as readonly string[]).includes(value);
+  return SUBSCRIPTION_STATUS_SET.has(value);
 }
 
 export const ACTIVE_SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [

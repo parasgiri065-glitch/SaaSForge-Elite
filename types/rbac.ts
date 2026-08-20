@@ -1,12 +1,6 @@
-import type { AppRole } from "@/types/database";
+import { APP_ROLE_VALUES, type AppRole } from "@/types/database";
 
-export const APP_ROLES = [
-  "owner",
-  "admin",
-  "member",
-  "billing",
-  "viewer",
-] as const satisfies readonly AppRole[];
+export const APP_ROLES = APP_ROLE_VALUES;
 
 export const BILLING_ROLES: readonly AppRole[] = ["owner", "admin", "billing"];
 export const ADMIN_ROLES: readonly AppRole[] = ["owner", "admin"];

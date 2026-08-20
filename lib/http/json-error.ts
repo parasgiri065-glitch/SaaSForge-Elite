@@ -1,3 +1,5 @@
+import { isObjectRecord } from "@/lib/types/object-record";
+
 /**
  * Read an `error` string from an unknown JSON body.
  *
@@ -6,16 +8,11 @@
  * @returns A non-empty error message.
  */
 export function readJsonError(body: unknown, fallback: string): string {
-  if (
-    typeof body === "object" &&
-    body !== null &&
-    "error" in body &&
-    typeof body.error === "string" &&
-    body.error.length > 0
-  ) {
-    return body.error;
+  if (!isObjectRecord(body)) {
+    return fallback;
   }
-  return fallback;
+  const errorValue = body["error"];
+  return typeof errorValue === "string" && errorValue.length > 0 ? errorValue : fallback;
 }
 
 /**
@@ -25,14 +22,9 @@ export function readJsonError(body: unknown, fallback: string): string {
  * @returns The URL, or `null` when missing.
  */
 export function readJsonUrl(body: unknown): string | null {
-  if (
-    typeof body === "object" &&
-    body !== null &&
-    "url" in body &&
-    typeof body.url === "string" &&
-    body.url.length > 0
-  ) {
-    return body.url;
+  if (!isObjectRecord(body)) {
+    return null;
   }
-  return null;
+  const urlValue = body["url"];
+  return typeof urlValue === "string" && urlValue.length > 0 ? urlValue : null;
 }

@@ -1,4 +1,5 @@
 import type { SupabaseAdminClient } from "@/lib/supabase/admin";
+import { isolateUnknownError } from "@/lib/errors/isolate-unknown-error";
 
 export type WebhookClaimResult = "duplicate" | "claimed";
 
@@ -84,7 +85,8 @@ export async function markStripeWebhookFailed(
       .from("stripe_webhook_events")
       .update({ error: errorMessage })
       .eq("id", stripeEventId);
-  } catch (persistError) {
-    console.error("[stripe.webhook] failed to persist error", persistError);
+  } catch (persistError: unknown) {
+    const isolated = isolateUnknownError(persistError, "persist_failed");
+    console.error("[stripe.webhook] failed to persist error", isolated);
   }
 }

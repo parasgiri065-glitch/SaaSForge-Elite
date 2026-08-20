@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { oauthCallbackQuerySchema } from "@/lib/security/api-schemas";
+import { isolateUnknownError } from "@/lib/errors/isolate-unknown-error";
 
 /**
  * GET /callback
@@ -30,7 +31,9 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL("/login?error=auth_callback", url.origin));
     }
     return NextResponse.redirect(new URL(nextPath, url.origin));
-  } catch {
+  } catch (error: unknown) {
+    const isolated = isolateUnknownError(error, "auth_callback");
+    console.error("[auth.callback]", isolated.code, isolated.name);
     return NextResponse.redirect(new URL("/login?error=auth_callback", url.origin));
   }
 }

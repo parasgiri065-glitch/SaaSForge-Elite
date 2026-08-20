@@ -1,42 +1,22 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database, Organization, Profile, Subscription } from "@/types/database";
+import type { Database } from "@/types/database";
 import type { TenantUser } from "@/types/auth";
+import {
+  firstRelationOrNull,
+  parseSubscriptionRow,
+  userJoinRowSchema,
+} from "@/lib/supabase/row-schemas";
 
 type TypedClient = SupabaseClient<Database>;
 
-interface UserJoinRow {
-  id: string;
-  email: string;
-  organization_id: string;
-  role: TenantUser["role"];
-  is_active: boolean;
-  last_seen_at: string | null;
-  created_at: string;
-  updated_at: string;
-  profile: Profile | Profile[] | null;
-  organization: Organization | Organization[] | null;
-}
-
-/**
- * Unwrap a PostgREST embed that may be an object, an array, or null.
- *
- * @param value - Embedded relation payload.
- * @returns The first row, or `null`.
- */
-function firstRelationOrNull<T>(value: T | T[] | null): T | null {
-  if (value === null) {
-    return null;
-  }
-  return Array.isArray(value) ? (value[0] ?? null) : value;
-}
-
 /**
  * Load the tenant-scoped user graph (profile, organization, subscription).
- * Uses the caller's client so RLS applies for user-scoped sessions.
+ * Query results are parsed through Zod row schemas so embed shapes cannot
+ * leak untyped fields into the frontend.
  *
  * @param supabaseClient - Typed Supabase client (browser, server, or admin).
  * @param userId - Verified Auth user id (`sub`).
- * @returns The tenant user, or `null` when the row is missing / query fails.
+ * @returns The tenant user, or `null` when the row is missing / invalid.
  */
 export async function loadTenantUser(
   supabaseClient: TypedClient,
@@ -65,10 +45,15 @@ export async function loadTenantUser(
     return null;
   }
 
-  const userRow = data as UserJoinRow;
+  const parsedJoin = userJoinRowSchema.safeParse(data);
+  if (!parsedJoin.success) {
+    return null;
+  }
+
+  const userRow = parsedJoin.data;
   const organization = firstRelationOrNull(userRow.organization);
 
-  let subscriptionRecord: Subscription | null = null;
+  let subscriptionRecord: TenantUser["subscription"] = null;
   if (organization) {
     const { data: subscriptionRow, error: subscriptionError } = await supabaseClient
       .from("subscriptions")
@@ -78,7 +63,13 @@ export async function loadTenantUser(
     if (subscriptionError) {
       return null;
     }
-    subscriptionRecord = subscriptionRow ?? null;
+    if (subscriptionRow) {
+      const parsedSubscription = parseSubscriptionRow(subscriptionRow);
+      if (!parsedSubscription) {
+        return null;
+      }
+      subscriptionRecord = parsedSubscription;
+    }
   }
 
   return {

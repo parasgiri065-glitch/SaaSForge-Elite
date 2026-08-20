@@ -1,4 +1,6 @@
 import { emptyJsonBodySchema } from "@/lib/security/api-schemas";
+import { parseJsonUnknown } from "@/lib/http/parse-json-unknown";
+import { isolateUnknownError } from "@/lib/errors/isolate-unknown-error";
 
 export type EmptyJsonBodyInspection =
   { ok: true } | { ok: false; status: 400; error: "invalid_json" | "unexpected_body" };
@@ -17,8 +19,9 @@ export function inspectEmptyJsonBody(rawText: string): EmptyJsonBodyInspection {
 
   let payload: unknown;
   try {
-    payload = JSON.parse(rawText) as unknown;
-  } catch {
+    payload = parseJsonUnknown(rawText);
+  } catch (error: unknown) {
+    void isolateUnknownError(error, "invalid_json");
     return { ok: false, status: 400, error: "invalid_json" };
   }
 

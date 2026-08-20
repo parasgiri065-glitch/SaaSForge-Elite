@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { readJsonError, readJsonUrl } from "@/lib/http/json-error";
+import { isolateUnknownError } from "@/lib/errors/isolate-unknown-error";
 
 export type StripeBillingPortalState = {
   isPortalRequestPending: boolean;
@@ -47,8 +48,9 @@ export function useStripeBillingPortal(options: {
         return;
       }
       setPortalRequestError("Portal response was missing a URL");
-    } catch {
-      setPortalRequestError("Network error while opening the portal");
+    } catch (error: unknown) {
+      const isolated = isolateUnknownError(error, "portal_network_error");
+      setPortalRequestError(isolated.message || "Network error while opening the portal");
     } finally {
       setIsPortalRequestPending(false);
     }

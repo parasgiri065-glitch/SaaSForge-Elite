@@ -11,6 +11,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { serverEnv } from "@/lib/env.server";
 import { stripeEventMetaSchema } from "@/lib/security/api-schemas";
 import { jsonResponse } from "@/lib/http/json-response";
+import { isolateUnknownError } from "@/lib/errors/isolate-unknown-error";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,9 +34,10 @@ export async function POST(request: Request) {
 
   try {
     rawBody = await request.text();
-  } catch (error) {
-    console.error("[stripe.webhook] failed to read body", error);
-    return jsonResponse(400, { error: "invalid_body" });
+  } catch (error: unknown) {
+    const isolated = isolateUnknownError(error, "invalid_body");
+    console.error("[stripe.webhook] failed to read body", isolated);
+    return jsonResponse(400, { error: isolated.code });
   }
 
   const inspected = inspectWebhookRequest(
@@ -53,10 +55,10 @@ export async function POST(request: Request) {
       inspected.signature,
       serverEnv.stripeWebhookSecret,
     );
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "invalid signature";
-    console.error("[stripe.webhook] signature verification failed", message);
-    return jsonResponse(400, { error: "invalid_signature" });
+  } catch (error: unknown) {
+    const isolated = isolateUnknownError(error, "invalid_signature");
+    console.error("[stripe.webhook] signature verification failed", isolated);
+    return jsonResponse(400, { error: isolated.code });
   }
 
   const eventMeta = stripeEventMetaSchema.safeParse({
@@ -83,16 +85,16 @@ export async function POST(request: Request) {
     await markStripeWebhookProcessed(supabaseAdminClient, stripeEvent.id);
 
     return jsonResponse(200, { status: "ok", type: stripeEvent.type });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "unknown_error";
+  } catch (error: unknown) {
+    const isolated = isolateUnknownError(error, "processing_failed");
     console.error(
       "[stripe.webhook] processing failed",
       stripeEvent.id,
       stripeEvent.type,
-      message,
+      isolated,
     );
-    await markStripeWebhookFailed(supabaseAdminClient, stripeEvent.id, message);
-    return jsonResponse(500, { error: "processing_failed" });
+    await markStripeWebhookFailed(supabaseAdminClient, stripeEvent.id, isolated.message);
+    return jsonResponse(500, { error: isolated.code });
   }
 }
 

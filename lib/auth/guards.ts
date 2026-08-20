@@ -1,9 +1,25 @@
+import { z } from "zod";
 import type { TenantUser } from "@/types/auth";
 
-export type ClaimsResult = {
-  data: { claims?: { sub?: unknown } | null } | null;
-  error: { message?: string } | null;
-};
+export const claimsResultSchema = z.object({
+  data: z
+    .object({
+      claims: z
+        .object({
+          sub: z.unknown().optional(),
+        })
+        .nullable()
+        .optional(),
+    })
+    .nullable(),
+  error: z
+    .object({
+      message: z.string().optional(),
+    })
+    .nullable(),
+});
+
+export type ClaimsResult = z.infer<typeof claimsResultSchema>;
 
 /**
  * Pull a verified subject out of `getClaims()`.
@@ -13,10 +29,11 @@ export type ClaimsResult = {
  * @returns The `sub` string, or `null` when the token is unusable.
  */
 export function readSubjectFromClaims(result: ClaimsResult): string | null {
-  if (result.error) {
+  const parsed = claimsResultSchema.safeParse(result);
+  if (!parsed.success || parsed.data.error) {
     return null;
   }
-  const subject = result.data?.claims?.sub;
+  const subject = parsed.data.data?.claims?.sub;
   if (typeof subject !== "string") {
     return null;
   }
