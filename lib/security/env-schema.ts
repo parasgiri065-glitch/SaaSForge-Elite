@@ -58,6 +58,22 @@ export const serverEnvSchema = z.object({
   STRIPE_PRICE_GROWTH: nonEmpty.max(128),
   STRIPE_PRICE_ENTERPRISE: nonEmpty.max(128),
   OPENAI_API_KEY: nonEmpty.max(256),
+  LEMONSQUEEZY_WEBHOOK_SECRET: nonEmpty
+    .min(8)
+    .max(256)
+    .refine(noPlaceholder, { message: "placeholder secret" }),
+  GITHUB_PAT_TOKEN: nonEmpty
+    .min(8)
+    .max(256)
+    .refine(noPlaceholder, { message: "placeholder secret" }),
+  GITHUB_OWNER: nonEmpty
+    .min(1)
+    .max(39)
+    .refine(noPlaceholder, { message: "placeholder secret" }),
+  GITHUB_REPO: nonEmpty
+    .min(1)
+    .max(100)
+    .refine(noPlaceholder, { message: "placeholder secret" }),
 });
 
 export type PublicEnvInput = z.input<typeof publicEnvSchema>;

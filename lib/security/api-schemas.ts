@@ -36,3 +36,20 @@ export const agentPromptSchema = z
   .trim()
   .min(1, "empty_prompt")
   .max(8000, "prompt_too_long");
+
+/** Lemon Squeezy `X-Signature` header: HMAC-SHA256 hex digest. */
+export const lemonSqueezySignatureSchema = z
+  .string()
+  .trim()
+  .min(16, "missing_x_signature")
+  .max(256, "invalid_signature")
+  .regex(/^[A-Fa-f0-9]+$/, "invalid_signature");
+
+/**
+ * GitHub login: 1–39 chars, alphanumeric, single hyphens in the middle.
+ * Used for Lemon Squeezy `meta.custom_data.github_username`.
+ */
+export const githubUsernameSchema = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/, "invalid_github_username");

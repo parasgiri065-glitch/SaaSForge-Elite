@@ -123,8 +123,10 @@ SaaSForge-Elite/
 │   └── api/
 │       ├── health/               Liveness probe. No secrets, no DB.
 │       ├── stripe/portal/        POST empty body → Stripe Customer Portal URL.
-│       └── webhooks/stripe/      HMAC verify, idempotent event apply.
-│                                 Rewrite: /api/stripe/webhook → this route.
+│       └── webhooks/
+│           ├── stripe/           HMAC verify, idempotent event apply.
+│           │                     Rewrite: /api/stripe/webhook → this route.
+│           └── lemonsqueezy/     HMAC `X-Signature` → GitHub `pull` invite.
 │
 ├── components/                   UI only. No Stripe, no service-role, no SQL.
 │   ├── agents/                   Chat bubbles, composer, markdown stream, tool trace.
@@ -156,6 +158,8 @@ SaaSForge-Elite/
 │   ├── stripe/                   HMAC inspect, payload parsers, org sync, handlers.
 │   │                             Cryptographically verified webhook signatures
 │   │                             live here — never JSON.parse the body first.
+│   ├── lemonsqueezy/             X-Signature HMAC + order_created payload parse.
+│   ├── github/                   PUT collaborator invite (`permission: pull`).
 │   ├── supabase/                 Browser / server / admin clients + Zod row schemas.
 │   ├── security/                 Zod env schema + API body/query schemas.
 │   ├── errors/                   isolateUnknownError — typed catch → UI/API alerts.
@@ -276,6 +280,19 @@ The browser **never** sends a Stripe customer id. The org’s `cus_…` is read 
 
 Set `NEXT_PUBLIC_DEMO_MODE=true`. `AuthProvider` mounts `DemoAuthProvider` (Ada Lovelace / Acme Labs). `/demo/*` is a public path. No Supabase, no Stripe. Use this on Vercel when you only need the landing + clickable dashboard.
 
+### Pipeline D — Store fulfillment (Lemon Squeezy → GitHub invite)
+
+Checkout must send `custom_data.github_username`. The webhook never trusts an unsigned body.
+
+| Step | Where | What happens |
+| ---: | --- | --- |
+| 1 | Lemon Squeezy `order_created` | POST `/api/webhooks/lemonsqueezy` with `X-Signature`. |
+| 2 | `lib/lemonsqueezy/verify-signature.ts` | HMAC-SHA256 of the **raw** body vs `LEMONSQUEEZY_WEBHOOK_SECRET`. 400 if invalid. |
+| 3 | Zod payload | Ignore any event other than `order_created` (200). |
+| 4 | `meta.custom_data.github_username` | Must be a legal GitHub login. Missing/invalid → 200 skipped (no retry loop). |
+| 5 | `PUT api.github.com/repos/{owner}/{repo}/collaborators/{user}` | `Authorization: Bearer GITHUB_PAT_TOKEN`, `permission: "pull"`. |
+| 6 | GitHub | `201` invitation sent · `204` already a collaborator · else 500 so Lemon retries. |
+
 ---
 
 ## Local installation
@@ -367,6 +384,10 @@ Placeholders containing `YOUR_` are **rejected**. Copying `.env.example` without
 | Vercel deploy boots but portal/webhooks 500 | Server secrets not set **in the Vercel project** | Project → Settings → Environment Variables. Names must match `.env.example` exactly. Redeploy after saving. Project name: `saasforge-elite`. |
 | OAuth callback → `/login?error=invalid_callback` | `NEXT_PUBLIC_APP_URL` wrong origin | Must be the canonical origin (`http://localhost:3000` or `https://your-domain.com`), no trailing slash. Also check `next` is a relative path, not `https://evil`. |
 | `placeholder secret` in the throw message | Any server key still contains `YOUR_` | Replace the whole value. Trimming is not enough if `YOUR_` remains. |
+| Lemon webhook `400 invalid_signature` | `LEMONSQUEEZY_WEBHOOK_SECRET` | Settings → Webhooks → signing secret. Must match the endpoint that posts to `/api/webhooks/lemonsqueezy`. |
+| Lemon webhook `400 missing_x_signature` | No `X-Signature` header | Confirm Lemon Squeezy is posting to this app, not a proxy that strips headers. |
+| Lemon webhook `200 skipped` | `meta.custom_data.github_username` missing/invalid | Pass `{ "github_username": "<login>" }` as checkout custom data. |
+| Lemon webhook `500 github_invite_failed` | `GITHUB_PAT_TOKEN` / `GITHUB_OWNER` / `GITHUB_REPO` | PAT needs collaborator invite rights on that repo. Owner/repo must exist. |
 
 ### Checklist (run in order)
 
