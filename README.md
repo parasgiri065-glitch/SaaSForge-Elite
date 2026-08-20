@@ -2,404 +2,410 @@
 
 **https://saasforge-elite.vercel.app**
 
-Public Next.js 16 deployment on Vercel. Open the landing page, then **Open live demo** for the dashboard or **Try AI chat** for the streaming agent — no signup required.
+Public Next.js 16 deployment on Vercel. Open the landing page, then **Open live demo** for the dashboard or **Try the AI agent** — no signup required.
 
 If Vercel asks for a **Project Name**, use exactly: `saasforge-elite` (lowercase, no spaces). The GitHub repo name `SaaSForge-Elite` is rejected by Vercel’s slug rules.
+
+---
 
 # SaaSForge Elite
 
 ### **Ship a production-grade, multi-tenant SaaS in a weekend — not a quarter. One clone saves 100+ hours of architecture, auth, billing, and AI plumbing.**
 
-SaaSForge Elite is a premium enterprise boilerplate for teams who refuse to rebuild the same foundation on every product. Next.js 16 (App Router), TypeScript, Tailwind CSS, Supabase, Stripe, and a LangChain / OpenAI streaming agent pipeline arrive already wired, typed, and hardened for production.
+SaaSForge Elite is a premium enterprise boilerplate for teams who refuse to rebuild the same foundation on every product. Next.js 16 (App Router), TypeScript, Tailwind CSS, Supabase, Stripe, and a streaming AI agent arrive already wired, typed, and hardened.
 
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=nextdotjs)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20DB-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20RLS-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Stripe](https://img.shields.io/badge/Stripe-Billing-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://stripe.com/)
-[![LangChain](https://img.shields.io/badge/LangChain-AI%20Agents-1C3C3C?style=for-the-badge)](https://www.langchain.com/)
-[![pnpm](https://img.shields.io/badge/pnpm-workspaces-F69220?style=for-the-badge&logo=pnpm&logoColor=white)](https://pnpm.io/)
+[![pnpm](https://img.shields.io/badge/pnpm-9.15-F69220?style=for-the-badge&logo=pnpm&logoColor=white)](https://pnpm.io/)
 
----
-
-## Why teams start here
-
-| Without SaaSForge Elite | With SaaSForge Elite |
+| | |
 | --- | --- |
-| Weeks of auth, tenancy, and billing glue | Multi-tenant RBAC, Stripe, and webhooks on day one |
-| Ad-hoc API limits and leaked tenant data | Isolated tenants, signed webhooks, and rate-limited routes |
-| SEO and metadata bolted on later | App Router metadata, sitemaps, and OG tags already modeled |
-| A chatbot demo taped onto the product | A streaming LangChain / OpenAI agent pipeline with typed tools |
-
-**The 100+ hours you get back:** tenancy schema, RLS policies, invite flows, Stripe Customer + Subscription + Invoice sync, webhook idempotency, usage metering hooks, SEO defaults, rate-limit middleware, and an agent streaming route that already speaks Server-Sent Events.
+| **Clone** | `git clone https://github.com/parasgiri065-glitch/SaaSForge-Elite.git` |
+| **Install** | `pnpm install` — pnpm only, Node 20.11+ |
+| **License** | Personal **$149** · Enterprise / Agency **$349** — see [LICENSE.md](./LICENSE.md) |
 
 ---
 
-## Tech stack
+## Table of contents
 
-| Layer | Choice | Role |
-| --- | --- | --- |
-| App & routing | **Next.js 16 · App Router** | RSC, streaming, route handlers, metadata API |
-| Language | **TypeScript (strict)** | End-to-end types from DB → UI → webhooks |
-| Styling | **Tailwind CSS** | Design tokens, dark mode, accessible primitives |
-| Auth & data | **Supabase** | Email / OAuth, Postgres, Row Level Security |
-| Billing | **Stripe** | Subscriptions, customer portal, signed webhooks |
-| AI | **LangChain + OpenAI** | Tool-calling agents with token-streamed responses |
-| Package manager | **pnpm** | Fast, lockfile-strict, workspace-ready |
+1. [Architecture visual map](#architecture-visual-map)
+2. [Repository structure](#repository-structure)
+3. [Quick Start for Beginners](#quick-start-for-beginners)
+4. [Local installation](#local-installation)
+5. [Troubleshooting missing environment keys](#troubleshooting-missing-environment-keys)
+6. [Security baseline](#security-baseline)
+7. [License](#license)
 
 ---
 
-## Production features
+## Architecture visual map
 
-Everything below is treated as a **ship-blocker**, not a backlog item.
-
-### Multi-tenant RBAC
-
-- [x] **Organization = tenant.** Every row is scoped by `org_id`; no shared “default workspace” shortcuts.
-- [x] **Roles:** `owner`, `admin`, `member`, `billing`, `viewer` — enforced in Postgres RLS **and** server actions.
-- [x] **Invites & seat limits** tied to the active Stripe price, with expired-token rotation.
-- [x] **Tenant isolation tests** for cross-org reads, writes, and signed URL leaks.
-- [x] **Audit log** for role changes, billing events, and agent tool invocations.
-
-### Metadata & SEO
-
-- [x] **Per-route `generateMetadata`** with title templates, canonicals, and noindex for app shells.
-- [x] **Open Graph + Twitter cards** generated from a single typed SEO config.
-- [x] **Dynamic `sitemap.ts` / `robots.ts`** that exclude authenticated and preview routes.
-- [x] **JSON-LD** helpers for marketing pages (SoftwareApplication, FAQ, Organization).
-- [x] **OG image route** (`/api/og`) so launches never ship with a missing social preview.
-
-### Stripe webhook processing
-
-- [x] **Raw-body signature verification** (`stripe.webhooks.constructEvent`) — never parse JSON first.
-- [x] **Idempotent event store** keyed by `event.id`; retries are safe and observable.
-- [x] **Handled events:** `checkout.session.completed`, `customer.subscription.*`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.deleted`.
-- [x] **Out-of-order protection** via Stripe `event.created` vs. last-applied timestamp.
-- [x] **Reconciliation job** to heal missed deliveries without double-granting entitlements.
-- [x] **Customer Portal** + plan-change preview that respects proration and seat counts.
-
-### Secure API rate-limiting
-
-- [x] **Edge middleware limiter** (token bucket) keyed by `org_id` → user → IP fallback.
-- [x] **Per-route budgets:** auth, billing, public marketing, and `/api/ai/*` each have their own ceiling.
-- [x] **AI stream guardrails:** concurrent-generation cap + token-budget check before the model is called.
-- [x] **429 responses** with `Retry-After` and structured error codes — never a generic 500.
-- [x] **Abuse signals** (burst + credential stuffing) forwarded to the audit log.
-
-### Also included
-
-- [x] Strict TypeScript, path aliases, and Zod validation at every trust boundary.
-- [x] App Router layouts for marketing, auth, and the authenticated dashboard.
-- [x] Streaming AI agent route (`text/event-stream`) with cancellable readers.
-- [x] Environment validation at boot — the app refuses to start with a silent missing secret.
-
----
-
-## Architecture at a glance
+Tenancy is **not** a middleware afterthought. The session resolves `organization_id` once. Every query, Stripe customer lookup, and agent tool receives that scope explicitly. The Stripe customer is **per organization**, never per user.
 
 ```
-                    ┌─────────────────────────────────────┐
-                    │           Next.js 16 (RSC)          │
-                    │   marketing · auth · app/(tenant)   │
-                    └──────────────┬──────────────────────┘
-                                   │
-           ┌───────────────────────┼───────────────────────┐
-           ▼                       ▼                       ▼
-   ┌───────────────┐      ┌────────────────┐      ┌─────────────────┐
-   │   Supabase    │      │     Stripe     │      │ LangChain Agent │
-   │ Auth + RLS DB │      │  Billing + WH  │      │  OpenAI stream  │
-   └───────────────┘      └────────────────┘      └─────────────────┘
-           │                       │                       │
-           └─────────── typed libs in /lib ────────────────┘
+                         ┌──────────────────────────────────────────┐
+                         │         Browser  (App Router)            │
+                         │  landing · /login · /signup · /dashboard │
+                         │  /settings/billing · /agents · /demo/*   │
+                         └────────────────────┬─────────────────────┘
+                                              │
+                    NEXT_PUBLIC_* keys only   │   cookies (JWT)
+                                              ▼
+                         ┌──────────────────────────────────────────┐
+                         │     Next.js 16  ·  proxy.ts (edge)       │
+                         │  refresh session · bounce guests to login│
+                         │  NOT the auth boundary — layouts still   │
+                         │  call getClaims() / requireUser()        │
+                         └──────┬─────────────────────────┬─────────┘
+                                │                         │
+               RSC / Server     │                         │  Route handlers
+               Components       │                         │
+                                ▼                         ▼
+                    ┌─────────────────────┐    ┌─────────────────────────┐
+                    │  lib/supabase       │    │  app/api/*              │
+                    │  server.ts  RLS on  │    │  /webhooks/stripe  HMAC │
+                    │  admin.ts   after   │    │  /stripe/portal    401/ │
+                    │  signature verify   │    │  /health           403  │
+                    └──────────┬──────────┘    └───────────┬─────────────┘
+                               │                           │
+                               ▼                           ▼
+                    ┌─────────────────────┐    ┌─────────────────────────┐
+                    │  Supabase Postgres  │    │  Stripe                 │
+                    │  organizations      │◄──►│  Customer (per org)     │
+                    │  users · profiles   │    │  Subscription · Invoice │
+                    │  subscriptions      │    │  Customer Portal        │
+                    │  stripe_webhook_    │    │  signed webhooks        │
+                    │  events  (idempotent)    └─────────────────────────┘
+                    └─────────────────────┘
 ```
 
-Tenancy is **not** a middleware afterthought. The session resolves `org_id` once; every query builder, Stripe customer lookup, and agent tool receives that scope explicitly.
+**Trust order on every billed mutation**
+
+```
+1. Browser never sends a customer id
+2. requireUser()  →  getClaims()  (never getSession() for identity)
+3. decidePortalAccess(role, org.stripe_customer_id)
+4. Stripe SDK  OR  constructEvent(rawBody, Stripe-Signature)
+5. claim event.id  →  upsert subscriptions  →  mark processed
+```
 
 ---
 
 ## Repository structure
 
-A modular surface area so feature teams can own a folder without colliding.
+A modular surface so a feature team can own a folder without colliding. Every path below is what ships in this repo today. Comments on the right are the **job of that directory**, not a file listing.
 
 ```
 SaaSForge-Elite/
-├── app/
-│   ├── (marketing)/
-│   │   ├── page.tsx
-│   │   ├── pricing/page.tsx
-│   │   └── layout.tsx
-│   ├── (auth)/
-│   │   ├── login/page.tsx
-│   │   ├── signup/page.tsx
-│   │   └── callback/route.ts
-│   ├── (app)/
-│   │   ├── layout.tsx
-│   │   ├── dashboard/page.tsx
-│   │   ├── settings/
-│   │   │   ├── billing/page.tsx
-│   │   │   └── team/page.tsx
-│   │   └── agents/[agentId]/page.tsx
-│   ├── api/
-│   │   ├── stripe/
-│   │   │   ├── checkout/route.ts
-│   │   │   ├── portal/route.ts
-│   │   │   └── webhook/route.ts
-│   │   ├── ai/
-│   │   │   └── stream/route.ts
-│   │   └── health/route.ts
-│   ├── sitemap.ts
-│   ├── robots.ts
-│   └── layout.tsx
-├── components/
-│   ├── ui/                    # primitives (button, dialog, input)
-│   ├── marketing/
-│   ├── billing/
-│   ├── team/
-│   └── agents/
-│       ├── chat-viewport.tsx
-│       └── tool-call-trace.tsx
-├── hooks/
-│   ├── use-agent-stream.ts
-│   ├── use-live-auth-session.ts
-│   ├── use-mobile-navigation.ts
-│   ├── use-stick-to-bottom-scroll.ts
+│
+├── app/                          Next.js 16 App Router. RSC by default.
+│   ├── page.tsx                  Public marketing landing.
+│   ├── layout.tsx                Root chrome, fonts, Auth + Theme providers.
+│   ├── error.tsx · global-error.tsx · not-found.tsx
+│   │
+│   ├── (auth)/                   Unauthenticated shell. Bounces signed-in users.
+│   │   ├── login/                Email/password sign-in form.
+│   │   ├── signup/               Creates auth user + owner org (via DB trigger).
+│   │   └── callback/route.ts     PKCE code exchange; `next` is same-origin only.
+│   │
+│   ├── (app)/                    Authenticated workspace. layout calls requireUser().
+│   │   ├── dashboard/            Tenant overview (org, role, plan).
+│   │   ├── agents/               Streaming AI chat viewport.
+│   │   └── settings/
+│   │       ├── billing/          Plan card, invoices, Manage Subscription.
+│   │       └── team/             Seat placeholder (invites stay behind RLS).
+│   │
+│   ├── demo/                     Public mock workspace (Ada Lovelace / Acme Labs).
+│   │                             No live keys required. Prefix /demo is public.
+│   │
+│   └── api/
+│       ├── health/               Liveness probe. No secrets, no DB.
+│       ├── stripe/portal/        POST empty body → Stripe Customer Portal URL.
+│       └── webhooks/stripe/      HMAC verify, idempotent event apply.
+│                                 Rewrite: /api/stripe/webhook → this route.
+│
+├── components/                   UI only. No Stripe, no service-role, no SQL.
+│   ├── agents/                   Chat bubbles, composer, markdown stream, tool trace.
+│   ├── auth/                     Login / signup forms, require-auth gate, sign-out.
+│   ├── billing/                  Plan card, invoice table, portal button.
+│   ├── dashboard/                Metric tiles shared by live + demo dashboards.
+│   ├── layout/                   Sidebar, topbar, mobile drawer, atmosphere.
+│   ├── marketing/                Landing header, hero, features, product stage.
+│   ├── providers/                AuthContext, live vs demo auth, theme.
+│   ├── system/                   Shared error-boundary fallback card.
+│   └── ui/                       Button variants, text field, inline SVG icons.
+│
+├── hooks/                        One concern per hook. UI state ≠ data fetching.
+│   ├── use-live-auth-session.ts  Supabase session + tenant hydration.
+│   ├── use-user-subscription-state.ts
+│   │                             Plan tier + Stripe customer derived from auth.
 │   ├── use-stripe-billing-portal.ts
-│   └── use-user-subscription-state.ts
-├── lib/
-│   ├── ui/
-│   │   ├── cn.ts
-│   │   └── layout-classes.ts
-│   ├── supabase/
-│   │   ├── client.ts
-│   │   ├── server.ts
-│   │   └── admin.ts
-│   ├── stripe/
-│   │   ├── client.ts
-│   │   ├── webhook-payload.ts
-│   │   ├── subscription-sync.ts
-│   │   └── webhook.ts
-│   ├── ai/
-│   │   ├── agent.ts
-│   │   ├── tools.ts
-│   │   └── stream.ts
-│   ├── rbac.ts
-│   ├── rate-limit.ts
-│   ├── seo.ts
-│   └── env.ts
-├── supabase/
+│   │                             POST /api/stripe/portal; surfaces typed errors.
+│   ├── use-agent-stream.ts       Transcript + demo token stream.
+│   ├── use-composer-draft.ts     Composer text only (no network).
+│   ├── use-mobile-navigation.ts  Drawer open/close + body scroll lock.
+│   ├── use-stick-to-bottom-scroll.ts
+│   ├── use-login-form.ts · use-signup-form.ts
+│   └── use-theme-preference.ts   light/dark + localStorage.
+│
+├── lib/                          Server-capable domain logic. Import with @/*.
+│   ├── auth/                     JWT guards, requireUser, Zod sign-in/up, demo tenant.
+│   ├── billing/                  Pure portal authorization (401 / 403 / 409).
+│   ├── stripe/                   HMAC inspect, payload parsers, org sync, handlers.
+│   │                             Cryptographically verified webhook signatures
+│   │                             live here — never JSON.parse the body first.
+│   ├── supabase/                 Browser / server / admin clients + Zod row schemas.
+│   ├── security/                 Zod env schema + API body/query schemas.
+│   ├── errors/                   isolateUnknownError — typed catch → UI/API alerts.
+│   ├── http/                     JSON responses, empty-body inspect, parseJsonUnknown.
+│   ├── crypto/                   Web Crypto IDs (no Math.random).
+│   ├── markdown/                 Streaming-safe markdown subset parser.
+│   ├── agents/                   Chat message factories + demo stream.
+│   ├── ui/                       cn() + semantic Tailwind variants.
+│   ├── theme/                    Shared localStorage key for the boot script.
+│   ├── types/                    Compile-time AssertEqual / object-record guards.
+│   ├── env.ts                    Public env (client-safe). Zod-parsed.
+│   └── env.server.ts             Server secrets. `import "server-only"`.
+│
+├── supabase/                     Schema is source of truth. RLS on every table.
 │   ├── migrations/
-│   │   ├── 0001_tenancy.sql
-│   │   ├── 0002_rbac.sql
-│   │   ├── 0003_billing.sql
-│   │   └── 0004_audit.sql
-│   ├── seed.sql
-│   └── config.toml
-├── types/
-│   ├── database.ts            # generated from Supabase
-│   ├── billing.ts
-│   ├── rbac.ts
-│   └── agent.ts
-├── middleware.ts              # session + tenant + rate-limit
-├── .env.example
-├── next.config.ts
-├── tailwind.config.ts
-├── tsconfig.json
-├── package.json
-├── pnpm-lock.yaml
-└── README.md
+│   │   ├── 0001_tenancy.sql      organizations, users, profiles + provision trigger.
+│   │   ├── 0002_rls.sql          Default-deny policies + role helpers.
+│   │   └── 0003_billing.sql      subscriptions + stripe_webhook_events ledger.
+│   └── seed.sql                  Local Acme Labs fixture.
+│
+├── types/                        Shared domain types. No runtime code.
+│   ├── database.ts               SQL columns 1:1. Insert/Update derived from Row.
+│   ├── auth.ts                   TenantUser = User + profile/org/subscription.
+│   ├── billing.ts                Plan tier, invoices, status guards.
+│   ├── rbac.ts                   APP_ROLES, BILLING_ROLES, hasRole().
+│   └── agent.ts                  ChatMessage / stream events.
+│
+├── tests/                        Vitest. Included in `pnpm typecheck`.
+│   ├── auth/ · billing/ · stripe/ · supabase/ · security/ · errors/ · ui/
+│
+├── proxy.ts                      Next.js 16 request boundary (NOT middleware.ts).
+├── next.config.ts                CSP, HSTS on Vercel, webhook path rewrite.
+├── vercel.json                   Project name must be saasforge-elite.
+├── .env.example                  The only env file that is committed.
+├── LICENSE.md                    Personal $149 · Enterprise $349.
+├── package.json                  pnpm@9.15.9 · engines.node >= 20.11.0
+└── README.md                     You are here.
 ```
 
 ---
 
-## Prerequisites
+## Quick Start for Beginners
 
-| Tool | Version | Notes |
+This is the code execution pipeline — how a click in the UI becomes a row in Postgres and a customer in Stripe. Read it top to bottom the first time you clone.
+
+### The three moving parts
+
+| Layer | What the beginner touches | What actually runs |
 | --- | --- | --- |
-| Node.js | **20.11+** (LTS) | Required by Next.js 16 |
-| pnpm | **9+** | `corepack enable && corepack prepare pnpm@latest --activate` |
-| Supabase CLI | **latest** | Local Postgres + Auth |
-| Stripe CLI | **latest** | Forward webhooks to localhost |
-| Accounts | — | Supabase project, Stripe (test mode), OpenAI API key |
+| **Frontend form** | `/signup`, `/login`, **Manage Subscription** | Client components + hooks. Never hold the service-role key. |
+| **Supabase** | `.env.local` URL + anon key | Auth users, tenant rows, RLS. Provisioning trigger creates the org. |
+| **Stripe gateway** | Test API keys + `pnpm stripe:listen` | Customer (per org), subscription, signed webhooks back into Postgres. |
+
+### Pipeline A — Create a workspace (signup → database)
+
+| Step | Where | What happens |
+| ---: | --- | --- |
+| 1 | `components/auth/signup-form.tsx` | User submits name, org, email, password. |
+| 2 | `hooks/use-signup-form.ts` | Field state. Calls `signUp()` from auth context. |
+| 3 | `hooks/use-live-auth-session.ts` | Zod `signUpSchema`, then `supabase.auth.signUp()`. |
+| 4 | Supabase Auth | Inserts `auth.users`. Fires `handle_new_user()`. |
+| 5 | `0001_tenancy.sql` trigger | Inserts `organizations` (owner) + `users` + `profiles`. `organization_id` is assigned **by the server**, never from the form. |
+| 6 | `app/(auth)/callback/route.ts` | If email confirm is on: PKCE `code` → session. `next` must be a same-origin path. |
+| 7 | `lib/auth/require-user.ts` | `getClaims()` (not `getSession()`) → `loadTenantUser()` → dashboard. |
+
+```
+[ Signup form ]
+      │  email, password, fullName, organizationName
+      ▼
+[ useSignupForm / useLiveAuthSession ]
+      │  Zod  →  supabase.auth.signUp()
+      ▼
+[ Supabase Auth  auth.users ]
+      │  AFTER INSERT trigger
+      ▼
+[ public.organizations  +  public.users  +  public.profiles ]
+      │  RLS: caller only sees their organization_id
+      ▼
+[ /dashboard ]  requireUser() + tenant graph
+```
+
+### Pipeline B — Manage billing (button → Stripe → webhook → database)
+
+The browser **never** sends a Stripe customer id. The org’s `cus_…` is read from Postgres after the JWT is verified.
+
+| Step | Where | What happens |
+| ---: | --- | --- |
+| 1 | `Manage Subscription` button | `useStripeBillingPortal` POSTs **empty JSON** to `/api/stripe/portal`. |
+| 2 | `app/api/stripe/portal/route.ts` | Rejects extra body fields. `getVerifiedTenantUser()`. |
+| 3 | `lib/billing/portal-access.ts` | `401` no user · `403` wrong role · `409` no `stripe_customer_id`. Roles allowed: `owner`, `admin`, `billing`. |
+| 4 | Stripe API | `billingPortal.sessions.create({ customer, return_url })`. Browser redirects to Stripe. |
+| 5 | Customer pays / changes plan | Stripe emits `invoice.paid`, `customer.subscription.*`, `checkout.session.completed`. |
+| 6 | `POST /api/webhooks/stripe` | Raw body + `Stripe-Signature`. **Never `JSON.parse` first.** `constructEvent`. |
+| 7 | `lib/stripe/webhook-idempotency.ts` | Claim `event.id` in `stripe_webhook_events`. Duplicates return 200. |
+| 8 | `lib/stripe/subscription-sync.ts` | Map customer → `organizations`, upsert `subscriptions` (one row per org). |
+| 9 | Billing UI | `useUserSubscriptionState` reads the joined tenant subscription. Plan label comes from `stripe_price_id`. |
+
+```
+[ Billing button ]
+      │  POST /api/stripe/portal   body = {} 
+      ▼
+[ requireUser + decidePortalAccess ]
+      │  customer id from organizations.stripe_customer_id
+      ▼
+[ Stripe Customer Portal ]
+      │  user changes plan / pays
+      ▼
+[ Stripe → POST /api/webhooks/stripe ]
+      │  HMAC  →  claim event.id  →  upsert subscriptions
+      ▼
+[ public.subscriptions  (status, price, period) ]
+      │
+      ▼
+[ SubscriptionCard  /  InvoiceTable ]
+```
+
+### Pipeline C — Public demo (no keys)
+
+Set `NEXT_PUBLIC_DEMO_MODE=true`. `AuthProvider` mounts `DemoAuthProvider` (Ada Lovelace / Acme Labs). `/demo/*` is a public path. No Supabase, no Stripe. Use this on Vercel when you only need the landing + clickable dashboard.
 
 ---
 
 ## Local installation
 
-Follow these steps in order. The stack is designed to boot only when required secrets are present.
+### Prerequisites
 
-### 1. Clone and enter the project
+| Tool | Version | Notes |
+| --- | --- | --- |
+| Node.js | **20.11+** (LTS) | Required by Next.js 16 |
+| pnpm | **9.15.9** | `corepack enable && corepack prepare pnpm@9.15.9 --activate` |
+| Supabase CLI | latest | Local Postgres + Auth |
+| Stripe CLI | latest | Forward webhooks to localhost |
+
+### 1. Clone and install
 
 ```bash
 git clone https://github.com/parasgiri065-glitch/SaaSForge-Elite.git
 cd SaaSForge-Elite
-```
-
-### 2. Enable pnpm (if needed)
-
-```bash
 corepack enable
-corepack prepare pnpm@latest --activate
-pnpm --version
-```
-
-### 3. Install dependencies
-
-```bash
+corepack prepare pnpm@9.15.9 --activate
 pnpm install
 ```
 
-This installs the Next.js 16 workspace, TypeScript, Tailwind, Supabase SDKs, Stripe, LangChain, and OpenAI clients from the lockfile. Do **not** fall back to npm or yarn — lockfile and `preinstall` are pnpm-only.
+Do **not** fall back to npm or yarn.
 
-### 4. Configure environment variables
+### 2. Environment file
 
 ```bash
 cp .env.example .env.local
 ```
 
-Fill in `.env.local` (never commit this file):
+Never commit `.env.local`. The only env file in git is `.env.example`.
 
-```bash
-# App
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_APP_NAME="SaaSForge Elite"
-
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-
-# Stripe
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_PRICE_STARTER=
-STRIPE_PRICE_GROWTH=
-STRIPE_PRICE_ENTERPRISE=
-
-# AI
-OPENAI_API_KEY=sk-...
-LANGCHAIN_TRACING_V2=false
-LANGCHAIN_API_KEY=
-
-# Security
-RATE_LIMIT_REDIS_URL=          # optional; in-memory fallback in dev
-```
-
-`lib/env.ts` validates this schema at boot. A missing `STRIPE_WEBHOOK_SECRET` or service-role key fails fast instead of shipping a half-configured dashboard.
-
-### 5. Start Supabase locally
+### 3. Database and Stripe (live mode)
 
 ```bash
 pnpm supabase:start
 pnpm supabase:migrate
 pnpm supabase:seed
-```
 
-This applies tenancy, RBAC, billing, and audit migrations, then loads a demo organization (`Acme Labs`) with an owner and a viewer so you can verify isolation immediately.
-
-### 6. Sync Stripe (test mode)
-
-```bash
 stripe login
-pnpm stripe:listen
-```
-
-`pnpm stripe:listen` forwards events to `http://localhost:3000/api/stripe/webhook` and prints a `whsec_...` signing secret — paste that into `.env.local` and restart the dev server.
-
-Create three recurring Prices in the Stripe Dashboard (Starter / Growth / Enterprise) and map their IDs to the `STRIPE_PRICE_*` variables.
-
-### 7. Run the app
-
-```bash
+pnpm stripe:listen          # prints whsec_…  → paste into .env.local, restart
 pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### 4. Demo mode (no keys)
+
+```bash
+NEXT_PUBLIC_DEMO_MODE=true pnpm dev
+```
+
+Then open `/demo/dashboard`.
+
 | Script | Purpose |
 | --- | --- |
-| `pnpm dev` | Next.js 16 dev server with Turbopack |
-| `pnpm build` | Production build (typecheck + lint gated) |
-| `pnpm start` | Serve the production build |
-| `pnpm lint` | ESLint + import boundaries |
-| `pnpm typecheck` | `tsc --noEmit` |
-| `pnpm test` | Unit + tenant-isolation tests |
-| `pnpm supabase:reset` | Wipe and re-seed local Postgres |
-
-### 8. Verify the four production paths
-
-1. **RBAC** — invite a second user as `viewer`; confirm they cannot open `/settings/billing`.
-2. **SEO** — view-source on `/` and `/pricing`; confirm title template, canonical, and OG tags.
-3. **Stripe webhooks** — complete a test Checkout; confirm the org’s plan flips only after a verified, idempotent event.
-4. **Rate-limit** — burst `/api/ai/stream`; confirm `429` + `Retry-After` after the org budget is exceeded.
+| `pnpm dev` | Next.js 16 + Turbopack |
+| `pnpm build` | Production build |
+| `pnpm lint` | ESLint (`any` banned, `@/*` imports only) |
+| `pnpm typecheck` | `tsc --noEmit` including tests |
+| `pnpm test` | Vitest |
+| `pnpm stripe:listen` | Forward to `/api/webhooks/stripe` |
 
 ---
 
-## Multi-tenant model (short version)
+## Troubleshooting missing environment keys
 
-```
-auth.users  1──*  memberships  *──1  organizations
-                                  │
-                    ┌─────────────┼─────────────┐
-                    ▼             ▼             ▼
-                 projects      subscriptions   audit_events
-                    │
-                    ▼
-              agent_runs  (streamed, org-scoped)
-```
+Env is parsed by Zod in `lib/security/env-schema.ts`. Public keys boot through `lib/env.ts`. Server secrets are **lazy** (`lib/env.server.ts`) so the public demo can start without Stripe — they throw the first time a secret is actually read.
 
-- RLS policies require `org_id = auth.jwt() -> 'org_id'` (set in a secure cookie + JWT claim on login / tenant switch).
-- The Stripe customer is **per organization**, never per user.
-- Agent tools receive `ctx.orgId` from the server — the model cannot choose another tenant.
+Placeholders containing `YOUR_` are **rejected**. Copying `.env.example` without replacing values is the #1 failure mode.
 
----
+### What you will see
 
-## AI agent streaming pipeline
+| Symptom | Missing / invalid key | What to check |
+| --- | --- | --- |
+| Boot error: `Missing public environment variable for "supabaseUrl"` | `NEXT_PUBLIC_SUPABASE_URL` | Dashboard → Project Settings → API → Project URL. Local CLI is `http://127.0.0.1:54321`. No trailing slash. Empty string is allowed only for demo; a non-empty value must be a valid URL. |
+| Boot error: same, for `"supabaseAnonKey"` | `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or publishable alias) | API → `anon` / `publishable` key. Either name works; `lib/env.ts` falls back. |
+| `[SaaSForge] Invalid or missing server secret "SUPABASE_SERVICE_ROLE_KEY"` | `SUPABASE_SERVICE_ROLE_KEY` | API → `service_role`. Server-only. If the value still contains `YOUR_`, Zod refuses it. First thrown when a webhook uses `createAdminClient()`. |
+| Same, `"STRIPE_SECRET_KEY"` | `STRIPE_SECRET_KEY` | Developers → API keys. Use `sk_test_…` until go-live. Thrown when `getStripe()` runs (portal or webhook). |
+| Same, `"STRIPE_WEBHOOK_SECRET"` | `STRIPE_WEBHOOK_SECRET` | Local: `pnpm stripe:listen` prints `whsec_…` — paste and **restart** `pnpm dev`. Prod: Webhooks → endpoint signing secret. Thrown in `constructEvent`. |
+| Portal button → `409 no_customer` | Org has no `stripe_customer_id` | Complete a Checkout in test mode (or attach a customer in Studio). Not an env miss — the tenant row is empty. |
+| Portal button → `403 forbidden` | Role is `member` / `viewer` | Sign in as `owner`, `admin`, or `billing`. |
+| Portal button → `401 unauthorized` | Session missing / inactive | Sign in again. `getClaims()` failed or `is_active = false`. |
+| Webhook `400 invalid_signature` | `STRIPE_WEBHOOK_SECRET` mismatch | Local secret from `stripe listen` is **not** the Dashboard secret. Don’t mix them. Restart after pasting. |
+| Webhook `400 empty_body` / `missing_stripe_signature` | Request never reached the raw-body handler | Confirm the CLI forwards to `/api/webhooks/stripe` (or `/api/stripe/webhook`, which rewrites). Do not put a JSON parser in front of this route. |
+| Webhook `400 payload_too_large` | Body > 1,048,576 bytes | Not env. Inspect the Stripe event; this is a guard, not a misconfig. |
+| Landing works, dashboard is Ada Lovelace | `NEXT_PUBLIC_DEMO_MODE=true` **or** public Supabase keys empty | Expected. Set `NEXT_PUBLIC_DEMO_MODE=false` and fill URL + anon key for live auth. |
+| Vercel deploy boots but portal/webhooks 500 | Server secrets not set **in the Vercel project** | Project → Settings → Environment Variables. Names must match `.env.example` exactly. Redeploy after saving. Project name: `saasforge-elite`. |
+| OAuth callback → `/login?error=invalid_callback` | `NEXT_PUBLIC_APP_URL` wrong origin | Must be the canonical origin (`http://localhost:3000` or `https://your-domain.com`), no trailing slash. Also check `next` is a relative path, not `https://evil`. |
+| `placeholder secret` in the throw message | Any server key still contains `YOUR_` | Replace the whole value. Trimming is not enough if `YOUR_` remains. |
 
-`POST /api/ai/stream` authenticates, checks entitlements and rate limits, then opens an SSE stream:
+### Checklist (run in order)
 
-1. Resolve tenant + role (`member` and above).
-2. Bind LangChain tools with `orgId` (search workspace, fetch billing status, draft replies).
-3. Stream OpenAI tokens through a TransformStream; the client hook (`use-agent-stream`) renders incrementally.
-4. Persist `agent_runs` + tool traces for audit; abort the reader if the client disconnects.
+1. `cp .env.example .env.local` — then **replace every `YOUR_`**.
+2. Confirm the file is named `.env.local` (Next.js does not load `.env.production` in `pnpm dev`).
+3. Restart `pnpm dev` after every env edit. Next inlines `NEXT_PUBLIC_*` at boot.
+4. `pnpm stripe:listen` running in a second terminal if you expect webhooks.
+5. On Vercel: Production + Preview env both filled; no `YOUR_` leftovers.
 
-No browser-held OpenAI key. No unscoped “chat with my database” tool.
+### Where keys are allowed to live
+
+| Key | Browser bundle | Server | Notes |
+| --- | --- | --- | --- |
+| `NEXT_PUBLIC_APP_URL` | yes | yes | OAuth redirect + portal `return_url` |
+| `NEXT_PUBLIC_SUPABASE_URL` / `ANON_KEY` | yes | yes | RLS-bound. Never the service role. |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | yes | yes | `pk_test_` / `pk_live_` |
+| `NEXT_PUBLIC_DEMO_MODE` | yes | yes | `"true"` to skip live Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | **never** | webhook only | `lib/env.server.ts` + `server-only` |
+| `STRIPE_SECRET_KEY` | **never** | portal + webhook | |
+| `STRIPE_WEBHOOK_SECRET` | **never** | webhook HMAC | |
+| `STRIPE_PRICE_*` | no | mapping plan names | |
+| `OPENAI_API_KEY` | **never** | future `/api/ai/stream` | Safe to leave blank for the demo chat |
 
 ---
 
 ## Security baseline
 
 - Service-role key **server-only**; anon key is RLS-bound.
-- Stripe webhook route rejects unsigned or replayed events.
-- Rate limits applied in `middleware.ts` before the route handler allocates a model call.
-- Zod at every action and route handler — untrusted input never reaches Prisma-style query builders.
-- Headers: `Content-Security-Policy`, `Referrer-Policy`, `Permissions-Policy`, HSTS in production.
-
----
-
-## Project scripts (package.json)
-
-```json
-{
-  "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit",
-    "supabase:start": "supabase start",
-    "supabase:migrate": "supabase db push",
-    "supabase:seed": "supabase db execute --file supabase/seed.sql",
-    "supabase:reset": "supabase db reset",
-    "stripe:listen": "stripe listen --forward-to localhost:3000/api/stripe/webhook"
-  }
-}
-```
+- Stripe webhook route rejects unsigned, empty, or oversized payloads before crypto.
+- `proxy.ts` is **not** an authorization boundary. Layouts and route handlers call `getClaims()` / `requireUser()`.
+- Zod at every trust boundary. `any` and `as unknown as T` are lint errors.
+- Catch blocks run through `isolateUnknownError` before a UI/API alert is built.
+- Headers: `Content-Security-Policy`, `Referrer-Policy`, `Permissions-Policy`, HSTS on Vercel.
 
 ---
 
 ## License
 
-Private / commercial boilerplate. Redistribute only under the license included with your SaaSForge Elite seat.
+Commercial boilerplate. **Personal $149** — one production domain. **Enterprise / Agency $349** — unlimited production apps and client work. See [LICENSE.md](./LICENSE.md). AS-IS, no warranty.
 
 ---
 
