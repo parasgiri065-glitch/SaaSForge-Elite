@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { emptyJsonBodySchema, oauthCallbackQuerySchema } from "@/lib/security/api-schemas";
+import {
+  emptyJsonBodySchema,
+  oauthCallbackQuerySchema,
+} from "@/lib/security/api-schemas";
 import { randomInt } from "@/lib/crypto/random";
 
 describe("oauthCallbackQuerySchema", () => {

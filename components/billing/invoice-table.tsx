@@ -1,26 +1,27 @@
 import type { Invoice } from "@/types/billing";
 import { formatUsd } from "@/types/billing";
 import { IconExternal } from "@/components/ui/icons";
+import { invoiceStatusClasses, layoutClasses } from "@/lib/ui/layout-classes";
+import { cn } from "@/lib/ui/cn";
 
 interface InvoiceTableProps {
   invoices: Invoice[];
 }
 
-const STATUS_CLASS: Record<Invoice["status"], string> = {
-  paid: "text-emerald-300",
-  open: "text-amber-300",
-  void: "text-white/40",
-  uncollectible: "text-rose-300",
-};
-
+/**
+ * Responsive invoice history (table on desktop, list on mobile).
+ *
+ * @param props.invoices - Rows to render (may include mock samples).
+ * @returns A glass section with invoice history.
+ */
 export function InvoiceTable({ invoices }: InvoiceTableProps) {
-  const hasMocks = invoices.some((invoice) => invoice.isMock);
+  const hasMockInvoices = invoices.some((invoice) => invoice.isMock);
 
   return (
-    <section className="glass-panel overflow-hidden rounded-2xl">
+    <section className={`${layoutClasses.glassCard} overflow-hidden`}>
       <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
         <h2 className="text-sm font-semibold">Invoice history</h2>
-        {hasMocks ? (
+        {hasMockInvoices ? (
           <p className="text-xs text-white/40">Sample data until Stripe invoices sync</p>
         ) : null}
       </div>
@@ -43,10 +44,17 @@ export function InvoiceTable({ invoices }: InvoiceTableProps) {
               <tr key={invoice.id} className="border-t border-white/10">
                 <td className="px-5 py-3 font-medium">{invoice.number}</td>
                 <td className="px-5 py-3 text-white/50">{invoice.issuedAt}</td>
-                <td className={`px-5 py-3 capitalize ${STATUS_CLASS[invoice.status]}`}>
+                <td
+                  className={cn(
+                    "px-5 py-3 capitalize",
+                    invoiceStatusClasses[invoice.status],
+                  )}
+                >
                   {invoice.status}
                 </td>
-                <td className="px-5 py-3 tabular-nums">{formatUsd(invoice.amountCents)}</td>
+                <td className="px-5 py-3 tabular-nums">
+                  {formatUsd(invoice.amountCents)}
+                </td>
                 <td className="px-5 py-3 text-right">
                   {invoice.hostedUrl ? (
                     <a
@@ -68,15 +76,25 @@ export function InvoiceTable({ invoices }: InvoiceTableProps) {
 
       <ul className="divide-y divide-white/10 md:hidden">
         {invoices.map((invoice) => (
-          <li key={invoice.id} className="flex items-start justify-between gap-3 px-5 py-4">
+          <li
+            key={invoice.id}
+            className="flex items-start justify-between gap-3 px-5 py-4"
+          >
             <div>
               <p className="text-sm font-medium">{invoice.number}</p>
               <p className="text-xs text-white/40">{invoice.issuedAt}</p>
-              <p className={`mt-1 text-xs capitalize ${STATUS_CLASS[invoice.status]}`}>
+              <p
+                className={cn(
+                  "mt-1 text-xs capitalize",
+                  invoiceStatusClasses[invoice.status],
+                )}
+              >
                 {invoice.status}
               </p>
             </div>
-            <p className="text-sm font-medium tabular-nums">{formatUsd(invoice.amountCents)}</p>
+            <p className="text-sm font-medium tabular-nums">
+              {formatUsd(invoice.amountCents)}
+            </p>
           </li>
         ))}
       </ul>

@@ -1,7 +1,16 @@
 import type { ReactNode } from "react";
 import { parseMarkdown, type BlockNode, type InlineNode } from "@/lib/markdown/parse";
+import { cn } from "@/lib/ui/cn";
+import { markdownClasses } from "@/lib/ui/layout-classes";
 
-function renderInline(nodes: InlineNode[], keyPrefix: string): ReactNode[] {
+/**
+ * Render a list of inline markdown nodes.
+ *
+ * @param nodes - Inline AST from `parseInlineMarkdown`.
+ * @param keyPrefix - React key prefix unique to the parent block.
+ * @returns React children for a heading, paragraph, or list item.
+ */
+function renderInlineNodes(nodes: InlineNode[], keyPrefix: string): ReactNode[] {
   return nodes.map((node, index) => {
     const key = `${keyPrefix}-${index}`;
     switch (node.kind) {
@@ -9,17 +18,14 @@ function renderInline(nodes: InlineNode[], keyPrefix: string): ReactNode[] {
         return <span key={key}>{node.value}</span>;
       case "code":
         return (
-          <code
-            key={key}
-            className="rounded bg-zinc-200/80 px-1 py-0.5 font-mono text-[0.85em] dark:bg-zinc-800"
-          >
+          <code key={key} className={markdownClasses.inlineCode}>
             {node.value}
           </code>
         );
       case "strong":
-        return <strong key={key}>{renderInline(node.children, key)}</strong>;
+        return <strong key={key}>{renderInlineNodes(node.children, key)}</strong>;
       case "em":
-        return <em key={key}>{renderInline(node.children, key)}</em>;
+        return <em key={key}>{renderInlineNodes(node.children, key)}</em>;
       case "link":
         return (
           <a
@@ -27,37 +33,46 @@ function renderInline(nodes: InlineNode[], keyPrefix: string): ReactNode[] {
             href={node.href}
             target="_blank"
             rel="noreferrer"
-            className="underline decoration-indigo-400 underline-offset-2"
+            className={markdownClasses.link}
           >
-            {renderInline(node.children, key)}
+            {renderInlineNodes(node.children, key)}
           </a>
         );
     }
   });
 }
 
-function Block({ node, index }: { node: BlockNode; index: number }) {
+/**
+ * Render one markdown block node.
+ *
+ * @param props.node - Block AST node.
+ * @param props.index - Position in the block list (used for keys).
+ * @returns A heading, list, code block, or paragraph.
+ */
+function MarkdownBlock({ node, index }: { node: BlockNode; index: number }) {
   switch (node.kind) {
     case "heading": {
-      const className = "mt-3 mb-1 font-semibold tracking-tight first:mt-0";
-      const children = renderInline(node.children, `h-${index}`);
+      const children = renderInlineNodes(node.children, `h-${index}`);
       if (node.level === 1) {
-        return <h1 className={`text-xl ${className}`}>{children}</h1>;
+        return <h1 className={cn("text-xl", markdownClasses.heading)}>{children}</h1>;
       }
       if (node.level === 2) {
-        return <h2 className={`text-lg ${className}`}>{children}</h2>;
+        return <h2 className={cn("text-lg", markdownClasses.heading)}>{children}</h2>;
       }
-      return <h3 className={`text-base ${className}`}>{children}</h3>;
+      return <h3 className={cn("text-base", markdownClasses.heading)}>{children}</h3>;
     }
     case "list": {
       const ListTag = node.ordered ? "ol" : "ul";
       return (
         <ListTag
-          className={`my-2 space-y-1 pl-5 text-sm ${node.ordered ? "list-decimal" : "list-disc"}`}
+          className={cn(
+            "my-2 space-y-1 pl-5 text-sm",
+            node.ordered ? "list-decimal" : "list-disc",
+          )}
         >
           {node.items.map((item, itemIndex) => (
             <li key={`${index}-${itemIndex}`}>
-              {renderInline(item, `li-${index}-${itemIndex}`)}
+              {renderInlineNodes(item, `li-${index}-${itemIndex}`)}
             </li>
           ))}
         </ListTag>
@@ -65,7 +80,7 @@ function Block({ node, index }: { node: BlockNode; index: number }) {
     }
     case "code":
       return (
-        <pre className="my-2 overflow-x-auto rounded-xl bg-zinc-950 p-3 text-[13px] leading-relaxed text-zinc-100 dark:bg-black">
+        <pre className={markdownClasses.codeBlock}>
           {node.language ? (
             <span className="mb-2 block text-[10px] tracking-wide text-zinc-400 uppercase">
               {node.language}
@@ -77,8 +92,8 @@ function Block({ node, index }: { node: BlockNode; index: number }) {
       );
     case "paragraph":
       return (
-        <p className="my-1.5 text-sm leading-6">
-          {renderInline(node.children, `p-${index}`)}
+        <p className={markdownClasses.paragraph}>
+          {renderInlineNodes(node.children, `p-${index}`)}
         </p>
       );
   }
@@ -89,20 +104,22 @@ interface MarkdownStreamProps {
   streaming?: boolean;
 }
 
+/**
+ * Streaming-safe markdown renderer for assistant bubbles.
+ *
+ * @param props.content - Full buffer so far (may be mid-token).
+ * @param props.streaming - When true, shows a caret after the last block.
+ * @returns A `div.markdown-stream` of rendered blocks.
+ */
 export function MarkdownStream({ content, streaming = false }: MarkdownStreamProps) {
   const blocks = parseMarkdown(content);
 
   return (
     <div className="markdown-stream">
       {blocks.map((node, index) => (
-        <Block key={`${node.kind}-${index}`} node={node} index={index} />
+        <MarkdownBlock key={`${node.kind}-${index}`} node={node} index={index} />
       ))}
-      {streaming ? (
-        <span
-          className="animate-caret ml-0.5 inline-block h-4 w-1.5 translate-y-0.5 bg-indigo-500 align-middle"
-          aria-hidden
-        />
-      ) : null}
+      {streaming ? <span className={markdownClasses.caret} aria-hidden /> : null}
     </div>
   );
 }

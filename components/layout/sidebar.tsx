@@ -4,10 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getAppNav } from "@/components/layout/nav-items";
 import { IconMark } from "@/components/ui/icons";
-import { useAuth } from "@/hooks/use-auth";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { useAuth } from "@/hooks/use-auth";
+import { layoutClasses, navLinkClassName } from "@/lib/ui/layout-classes";
 
-function isActive(pathname: string, href: string): boolean {
+/**
+ * Whether a nav href is the current page (exact or nested).
+ *
+ * @param pathname - Current App Router pathname.
+ * @param href - Candidate nav href (already prefixed with `basePath`).
+ * @returns `true` when this item should render as current.
+ */
+function isCurrentNavHref(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -16,15 +24,22 @@ interface SidebarProps {
   basePath?: string;
 }
 
+/**
+ * Workspace sidebar: brand, nav, tenant identity, sign out.
+ *
+ * @param props.onNavigate - Optional callback (closes the mobile drawer).
+ * @param props.basePath - `""` or `"/demo"`.
+ * @returns The sidebar column.
+ */
 export function Sidebar({ onNavigate, basePath = "" }: SidebarProps) {
   const pathname = usePathname();
   const { tenantUser } = useAuth();
-  const nav = getAppNav(basePath);
+  const navigationItems = getAppNav(basePath);
   const displayName = tenantUser?.profile?.full_name ?? tenantUser?.email ?? "Workspace";
-  const orgName = tenantUser?.organization?.name ?? "No organization";
+  const organizationName = tenantUser?.organization?.name ?? "No organization";
 
   return (
-    <div className="flex h-full flex-col bg-black/20 backdrop-blur-xl">
+    <div className={layoutClasses.sidebarRoot}>
       <div className="flex h-16 items-center gap-2.5 border-b border-white/10 px-5">
         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/20 text-violet-200 ring-1 ring-white/10">
           <IconMark className="h-4 w-4" />
@@ -36,20 +51,16 @@ export function Sidebar({ onNavigate, basePath = "" }: SidebarProps) {
       </div>
 
       <nav aria-label="Workspace" className="flex-1 space-y-1 overflow-y-auto p-3">
-        {nav.map((item) => {
-          const active = isActive(pathname, item.href);
+        {navigationItems.map((item) => {
+          const isCurrentRoute = isCurrentNavHref(pathname, item.href);
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
               href={item.href}
               onClick={onNavigate}
-              aria-current={active ? "page" : undefined}
-              className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-all ${
-                active
-                  ? "bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
-                  : "text-white/55 hover:bg-white/5 hover:text-white"
-              }`}
+              aria-current={isCurrentRoute ? "page" : undefined}
+              className={navLinkClassName(isCurrentRoute)}
             >
               <Icon className="h-4 w-4 shrink-0" />
               {item.label}
@@ -61,7 +72,7 @@ export function Sidebar({ onNavigate, basePath = "" }: SidebarProps) {
       <div className="border-t border-white/10 p-4">
         <p className="truncate text-sm font-medium">{displayName}</p>
         <p className="truncate text-xs text-white/40">
-          {orgName}
+          {organizationName}
           {tenantUser?.role ? ` · ${tenantUser.role}` : ""}
         </p>
         <div className="mt-3">

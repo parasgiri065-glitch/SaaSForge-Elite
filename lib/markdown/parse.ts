@@ -1,73 +1,15 @@
-export type InlineNode =
-  | { kind: "text"; value: string }
-  | { kind: "code"; value: string }
-  | { kind: "strong"; children: InlineNode[] }
-  | { kind: "em"; children: InlineNode[] }
-  | { kind: "link"; href: string; children: InlineNode[] };
+import { parseInlineMarkdown } from "@/lib/markdown/parse-inline";
+import type { BlockNode, InlineNode } from "@/lib/markdown/types";
 
-export type BlockNode =
-  | { kind: "paragraph"; children: InlineNode[] }
-  | { kind: "heading"; level: 1 | 2 | 3; children: InlineNode[] }
-  | { kind: "list"; ordered: boolean; items: InlineNode[][] }
-  | { kind: "code"; language: string; value: string; incomplete: boolean };
+export type { BlockNode, InlineNode };
 
-const SAFE_HREF = /^(https?:\/\/|mailto:|\/)/i;
-
-function parseInline(input: string): InlineNode[] {
-  const nodes: InlineNode[] = [];
-  let remaining = input;
-
-  while (remaining.length > 0) {
-    const code = remaining.match(/^`([^`]+)`/);
-    if (code?.[1] !== undefined) {
-      nodes.push({ kind: "code", value: code[1] });
-      remaining = remaining.slice(code[0].length);
-      continue;
-    }
-
-    const strong = remaining.match(/^\*\*([^*]+)\*\*/);
-    if (strong?.[1] !== undefined) {
-      nodes.push({ kind: "strong", children: parseInline(strong[1]) });
-      remaining = remaining.slice(strong[0].length);
-      continue;
-    }
-
-    const em = remaining.match(/^_([^_]+)_/) ?? remaining.match(/^\*([^*]+)\*/);
-    if (em?.[1] !== undefined) {
-      nodes.push({ kind: "em", children: parseInline(em[1]) });
-      remaining = remaining.slice(em[0].length);
-      continue;
-    }
-
-    const link = remaining.match(/^\[([^\]]+)\]\(([^)\s]+)\)/);
-    if (link?.[1] !== undefined && link[2] !== undefined && SAFE_HREF.test(link[2])) {
-      nodes.push({
-        kind: "link",
-        href: link[2],
-        children: parseInline(link[1]),
-      });
-      remaining = remaining.slice(link[0].length);
-      continue;
-    }
-
-    const nextSpecial = remaining.search(/[`*_[]/);
-    if (nextSpecial === -1) {
-      nodes.push({ kind: "text", value: remaining });
-      break;
-    }
-    if (nextSpecial === 0) {
-      nodes.push({ kind: "text", value: remaining[0] ?? "" });
-      remaining = remaining.slice(1);
-      continue;
-    }
-    nodes.push({ kind: "text", value: remaining.slice(0, nextSpecial) });
-    remaining = remaining.slice(nextSpecial);
-  }
-
-  return nodes;
-}
-
-function headingLevel(marker: string): 1 | 2 | 3 {
+/**
+ * Map a `#` run to a heading level capped at 3.
+ *
+ * @param marker - The leading `#` characters from a heading line.
+ * @returns `1`, `2`, or `3`.
+ */
+function headingLevelFromMarker(marker: string): 1 | 2 | 3 {
   if (marker.length >= 3) {
     return 3;
   }
@@ -78,8 +20,11 @@ function headingLevel(marker: string): 1 | 2 | 3 {
 }
 
 /**
- * Small, streaming-safe markdown subset.
+ * Parse a streaming-safe markdown subset into block nodes.
  * Incomplete fences stay as an open code block instead of leaking raw ticks.
+ *
+ * @param source - The full assistant buffer so far (may be mid-token).
+ * @returns Ordered block nodes for `MarkdownStream`.
  */
 export function parseMarkdown(source: string): BlockNode[] {
   const blocks: BlockNode[] = [];
@@ -117,8 +62,8 @@ export function parseMarkdown(source: string): BlockNode[] {
     if (heading?.[1] && heading[2]) {
       blocks.push({
         kind: "heading",
-        level: headingLevel(heading[1]),
-        children: parseInline(heading[2]),
+        level: headingLevelFromMarker(heading[1]),
+        children: parseInlineMarkdown(heading[2]),
       });
       index += 1;
       continue;
@@ -126,14 +71,14 @@ export function parseMarkdown(source: string): BlockNode[] {
 
     const unordered = line.match(/^[-*]\s+(.+)$/);
     if (unordered?.[1] !== undefined) {
-      const items: InlineNode[][] = [parseInline(unordered[1])];
+      const items: InlineNode[][] = [parseInlineMarkdown(unordered[1])];
       index += 1;
       while (index < lines.length) {
         const item = (lines[index] ?? "").match(/^[-*]\s+(.+)$/);
         if (!item?.[1]) {
           break;
         }
-        items.push(parseInline(item[1]));
+        items.push(parseInlineMarkdown(item[1]));
         index += 1;
       }
       blocks.push({ kind: "list", ordered: false, items });
@@ -142,14 +87,14 @@ export function parseMarkdown(source: string): BlockNode[] {
 
     const ordered = line.match(/^\d+\.\s+(.+)$/);
     if (ordered?.[1] !== undefined) {
-      const items: InlineNode[][] = [parseInline(ordered[1])];
+      const items: InlineNode[][] = [parseInlineMarkdown(ordered[1])];
       index += 1;
       while (index < lines.length) {
         const item = (lines[index] ?? "").match(/^\d+\.\s+(.+)$/);
         if (!item?.[1]) {
           break;
         }
-        items.push(parseInline(item[1]));
+        items.push(parseInlineMarkdown(item[1]));
         index += 1;
       }
       blocks.push({ kind: "list", ordered: true, items });
@@ -179,7 +124,7 @@ export function parseMarkdown(source: string): BlockNode[] {
     }
     blocks.push({
       kind: "paragraph",
-      children: parseInline(paragraph.join(" ")),
+      children: parseInlineMarkdown(paragraph.join(" ")),
     });
   }
 

@@ -29,6 +29,13 @@ export const publicEnv = {
 
 export const isDemoMode = parsed.NEXT_PUBLIC_DEMO_MODE === "true";
 
+/**
+ * Read a required public env value or throw a boot-time error.
+ *
+ * @param name - Key on `publicEnv`.
+ * @returns The non-empty string value.
+ * @throws When the value is empty (misconfigured `.env.local`).
+ */
 export function requirePublicEnv(name: keyof typeof publicEnv): string {
   const value = publicEnv[name];
   if (!value) {

@@ -11,6 +11,16 @@ interface AppErrorFallbackProps {
   homeHref?: string;
 }
 
+/**
+ * Shared error / not-found card used by App Router error boundaries.
+ *
+ * @param props.title - Heading.
+ * @param props.description - Supporting copy.
+ * @param props.digest - Optional Next.js error digest.
+ * @param props.reset - Optional retry callback.
+ * @param props.homeHref - Home link target (default `/`).
+ * @returns A centered error card.
+ */
 export function AppErrorFallback({
   title,
   description,

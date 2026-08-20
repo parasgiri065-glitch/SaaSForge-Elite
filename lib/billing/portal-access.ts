@@ -17,6 +17,9 @@ export type PortalDecision = PortalDenial | PortalGrant;
 /**
  * Pure authorization for POST /api/stripe/portal.
  * Keeps the route handler free of branching that is hard to unit-test.
+ *
+ * @param user - Verified tenant user, or `null` for an empty request.
+ * @returns A grant with `customerId`, or a 401/403/409 denial.
  */
 export function decidePortalAccess(user: TenantUser | null): PortalDecision {
   if (!user || !user.is_active) {

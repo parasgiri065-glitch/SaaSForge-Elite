@@ -1,24 +1,15 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { isDemoMode } from "@/lib/env";
+import { useSignOutAction } from "@/hooks/use-sign-out-action";
 
+/**
+ * Sidebar sign-out control. Routing lives in `useSignOutAction`.
+ *
+ * @returns A full-width secondary button.
+ */
 export function SignOutButton() {
-  const { signOut } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
-  const [pending, setPending] = useState(false);
-
-  async function onClick() {
-    setPending(true);
-    await signOut();
-    const next = isDemoMode || pathname.startsWith("/demo") ? "/" : "/login";
-    router.replace(next);
-    router.refresh();
-  }
+  const { isSigningOut, handleSignOut } = useSignOutAction();
 
   return (
     <Button
@@ -26,12 +17,12 @@ export function SignOutButton() {
       variant="secondary"
       size="sm"
       className="w-full"
-      disabled={pending}
+      disabled={isSigningOut}
       onClick={() => {
-        void onClick();
+        void handleSignOut();
       }}
     >
-      {pending ? "Signing out…" : "Sign out"}
+      {isSigningOut ? "Signing out…" : "Sign out"}
     </Button>
   );
 }

@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { oauthCallbackQuerySchema } from "@/lib/security/api-schemas";
 
+/**
+ * GET /callback
+ *
+ * Exchange a PKCE `code` for a session, then redirect to a same-origin `next`.
+ *
+ * @param request - OAuth callback with `code` and optional `next` query params.
+ * @returns A redirect to `next` (default `/dashboard`) or `/login?error=…`.
+ */
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const parsed = oauthCallbackQuerySchema.safeParse({
@@ -13,7 +21,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/login?error=invalid_callback", url.origin));
   }
 
-  const next = parsed.data.next ?? "/dashboard";
+  const nextPath = parsed.data.next ?? "/dashboard";
 
   try {
     const supabase = await createServerSupabaseClient();
@@ -21,7 +29,7 @@ export async function GET(request: Request) {
     if (error) {
       return NextResponse.redirect(new URL("/login?error=auth_callback", url.origin));
     }
-    return NextResponse.redirect(new URL(next, url.origin));
+    return NextResponse.redirect(new URL(nextPath, url.origin));
   } catch {
     return NextResponse.redirect(new URL("/login?error=auth_callback", url.origin));
   }

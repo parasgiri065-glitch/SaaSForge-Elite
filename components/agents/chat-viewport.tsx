@@ -1,45 +1,35 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { ChatInput } from "@/components/agents/chat-input";
 import { ChatMessage } from "@/components/agents/chat-message";
-import { useAgentStream } from "@/hooks/use-agent-stream";
-
 import { ToolCallTrace } from "@/components/agents/tool-call-trace";
+import { useAgentStream } from "@/hooks/use-agent-stream";
+import { useStickToBottomScroll } from "@/hooks/use-stick-to-bottom-scroll";
+import { layoutClasses } from "@/lib/ui/layout-classes";
 
 interface ChatViewportProps {
   disabled?: boolean;
   agentId?: string;
 }
 
+/**
+ * Agent transcript + composer. Stream data is `useAgentStream`;
+ * stick-to-bottom is `useStickToBottomScroll`.
+ *
+ * @param props.disabled - Extra lock forwarded to the composer.
+ * @param props.agentId - Optional session id shown on the tool-call trace.
+ * @returns The full chat column.
+ */
 export function ChatViewport({ disabled = false, agentId }: ChatViewportProps) {
   const { messages, isStreaming, send, stop } = useAgentStream();
-  const scrollerRef = useRef<HTMLDivElement>(null);
-  const stickToBottom = useRef(true);
-
-  function onScroll() {
-    const node = scrollerRef.current;
-    if (!node) {
-      return;
-    }
-    const distance = node.scrollHeight - node.scrollTop - node.clientHeight;
-    stickToBottom.current = distance < 72;
-  }
-
-  useEffect(() => {
-    if (!stickToBottom.current) {
-      return;
-    }
-    const node = scrollerRef.current;
-    node?.scrollTo({ top: node.scrollHeight, behavior: "smooth" });
-  }, [messages]);
+  const { scrollerRef, handleScrollerScroll } = useStickToBottomScroll(messages);
 
   return (
-    <section className="flex h-[calc(100dvh-4rem)] flex-col">
+    <section className={layoutClasses.chatColumn}>
       <div
         ref={scrollerRef}
-        onScroll={onScroll}
-        className="flex-1 scrollbar-thin overflow-y-auto px-4 py-6 md:px-6"
+        onScroll={handleScrollerScroll}
+        className={layoutClasses.chatScroller}
       >
         <div className="mx-auto flex max-w-3xl flex-col gap-4">
           {messages.length === 0 ? (

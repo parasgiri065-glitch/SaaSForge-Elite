@@ -17,18 +17,32 @@ interface UserJoinRow {
   organization: Organization | Organization[] | null;
 }
 
-function firstOrNull<T>(value: T | T[] | null): T | null {
+/**
+ * Unwrap a PostgREST embed that may be an object, an array, or null.
+ *
+ * @param value - Embedded relation payload.
+ * @returns The first row, or `null`.
+ */
+function firstRelationOrNull<T>(value: T | T[] | null): T | null {
   if (value === null) {
     return null;
   }
   return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
+/**
+ * Load the tenant-scoped user graph (profile, organization, subscription).
+ * Uses the caller's client so RLS applies for user-scoped sessions.
+ *
+ * @param supabaseClient - Typed Supabase client (browser, server, or admin).
+ * @param userId - Verified Auth user id (`sub`).
+ * @returns The tenant user, or `null` when the row is missing / query fails.
+ */
 export async function loadTenantUser(
-  supabase: TypedClient,
+  supabaseClient: TypedClient,
   userId: string,
 ): Promise<TenantUser | null> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from("users")
     .select(
       `
@@ -51,33 +65,33 @@ export async function loadTenantUser(
     return null;
   }
 
-  const row = data as UserJoinRow;
-  const organization = firstOrNull(row.organization);
+  const userRow = data as UserJoinRow;
+  const organization = firstRelationOrNull(userRow.organization);
 
-  let subscription: Subscription | null = null;
+  let subscriptionRecord: Subscription | null = null;
   if (organization) {
-    const { data: sub, error: subError } = await supabase
+    const { data: subscriptionRow, error: subscriptionError } = await supabaseClient
       .from("subscriptions")
       .select("*")
       .eq("organization_id", organization.id)
       .maybeSingle();
-    if (subError) {
+    if (subscriptionError) {
       return null;
     }
-    subscription = sub ?? null;
+    subscriptionRecord = subscriptionRow ?? null;
   }
 
   return {
-    id: row.id,
-    email: row.email,
-    organization_id: row.organization_id,
-    role: row.role,
-    is_active: row.is_active,
-    last_seen_at: row.last_seen_at,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-    profile: firstOrNull(row.profile),
+    id: userRow.id,
+    email: userRow.email,
+    organization_id: userRow.organization_id,
+    role: userRow.role,
+    is_active: userRow.is_active,
+    last_seen_at: userRow.last_seen_at,
+    created_at: userRow.created_at,
+    updated_at: userRow.updated_at,
+    profile: firstRelationOrNull(userRow.profile),
     organization,
-    subscription,
+    subscription: subscriptionRecord,
   };
 }

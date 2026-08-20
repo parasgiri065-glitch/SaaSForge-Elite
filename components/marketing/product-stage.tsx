@@ -5,6 +5,11 @@ import { TiltStage } from "@/components/marketing/tilt-stage";
 const NAV = ["Overview", "AI Agent", "Billing", "Team"] as const;
 const BARS = [42, 58, 51, 73, 66, 81, 74, 90, 84, 96] as const;
 
+/**
+ * Decorative product mock shown on the landing page (MRR, seats, agent).
+ *
+ * @returns A tilted glass workspace preview.
+ */
 export function ProductStage() {
   return (
     <TiltStage>

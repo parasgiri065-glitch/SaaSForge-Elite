@@ -2,6 +2,12 @@ import { z } from "zod";
 
 const nonEmpty = z.string().trim();
 
+/**
+ * Allow empty (demo) or a valid absolute URL.
+ *
+ * @param value - Candidate URL string.
+ * @returns `true` when empty or a valid URL.
+ */
 function optionalUrl(value: string): boolean {
   if (value.length === 0) {
     return true;
@@ -9,6 +15,12 @@ function optionalUrl(value: string): boolean {
   return z.string().url().safeParse(value).success;
 }
 
+/**
+ * Reject documented placeholders like `YOUR_STRIPE_SECRET_KEY`.
+ *
+ * @param value - Candidate secret.
+ * @returns `true` when the value does not contain `YOUR_`.
+ */
 const noPlaceholder = (value: string) => !value.includes("YOUR_");
 
 export const publicEnvSchema = z.object({

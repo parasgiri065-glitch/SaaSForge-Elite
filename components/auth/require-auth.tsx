@@ -7,6 +7,13 @@ interface RequireAuthProps {
   children: ReactNode;
 }
 
+/**
+ * Client gate paired with `requireUser()` in the server layout.
+ * Renders a restoring-session state, then children once authenticated.
+ *
+ * @param props.children - Protected tree.
+ * @returns Children, a loading label, or `null` while redirecting.
+ */
 export function RequireAuth({ children }: RequireAuthProps) {
   const { isLoading, isAuthenticated } = useRequireAuth();
 

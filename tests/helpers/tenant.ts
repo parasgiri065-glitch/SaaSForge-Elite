@@ -1,6 +1,12 @@
 import type { TenantUser } from "@/types/auth";
 import type { AppRole } from "@/types/database";
 
+/**
+ * Build a tenant user for unit tests. Defaults to an active Acme Labs owner.
+ *
+ * @param overrides - Partial fields merged onto the fixture.
+ * @returns A complete `TenantUser`.
+ */
 export function makeTenantUser(overrides: Partial<TenantUser> = {}): TenantUser {
   return {
     id: "user_1",

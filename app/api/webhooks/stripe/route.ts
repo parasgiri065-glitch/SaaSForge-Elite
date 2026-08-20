@@ -1,18 +1,19 @@
-import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe/client";
 import { processStripeEvent } from "@/lib/stripe/webhook";
 import { inspectWebhookRequest } from "@/lib/stripe/webhook-request";
+import {
+  claimStripeWebhookEvent,
+  markStripeWebhookFailed,
+  markStripeWebhookProcessed,
+} from "@/lib/stripe/webhook-idempotency";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { serverEnv } from "@/lib/env.server";
 import { stripeEventMetaSchema } from "@/lib/security/api-schemas";
+import { jsonResponse } from "@/lib/http/json-response";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function json(status: number, body: Record<string, string>) {
-  return NextResponse.json(body, { status });
-}
 
 /**
  * POST /api/webhooks/stripe
@@ -22,6 +23,10 @@ function json(status: number, body: Record<string, string>) {
  * 2. Verify with the raw body (never JSON.parse first)
  * 3. Deduplicate on event.id
  * 4. Apply billing mutations with the service-role client
+ *
+ * @param request - Incoming webhook request with a raw body.
+ * @returns 200 `{ status }` on success/duplicate, 400 on inspect/signature
+ *   failure, 500 when processing throws.
  */
 export async function POST(request: Request) {
   let rawBody: string;
@@ -30,7 +35,7 @@ export async function POST(request: Request) {
     rawBody = await request.text();
   } catch (error) {
     console.error("[stripe.webhook] failed to read body", error);
-    return json(400, { error: "invalid_body" });
+    return jsonResponse(400, { error: "invalid_body" });
   }
 
   const inspected = inspectWebhookRequest(
@@ -38,12 +43,12 @@ export async function POST(request: Request) {
     request.headers.get("stripe-signature"),
   );
   if (!inspected.ok) {
-    return json(inspected.status, { error: inspected.error });
+    return jsonResponse(inspected.status, { error: inspected.error });
   }
 
-  let event: Stripe.Event;
+  let stripeEvent: Stripe.Event;
   try {
-    event = getStripe().webhooks.constructEvent(
+    stripeEvent = getStripe().webhooks.constructEvent(
       inspected.rawBody,
       inspected.signature,
       serverEnv.stripeWebhookSecret,
@@ -51,72 +56,51 @@ export async function POST(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "invalid signature";
     console.error("[stripe.webhook] signature verification failed", message);
-    return json(400, { error: "invalid_signature" });
+    return jsonResponse(400, { error: "invalid_signature" });
   }
 
-  const meta = stripeEventMetaSchema.safeParse({ id: event.id, type: event.type });
-  if (!meta.success) {
-    return json(400, { error: "invalid_event" });
+  const eventMeta = stripeEventMetaSchema.safeParse({
+    id: stripeEvent.id,
+    type: stripeEvent.type,
+  });
+  if (!eventMeta.success) {
+    return jsonResponse(400, { error: "invalid_event" });
   }
 
-  const admin = createAdminClient();
+  const supabaseAdminClient = createAdminClient();
 
   try {
-    const { data: existing, error: lookupError } = await admin
-      .from("stripe_webhook_events")
-      .select("id, processed_at, error")
-      .eq("id", event.id)
-      .maybeSingle();
-
-    if (lookupError) {
-      throw new Error(lookupError.message);
+    const claim = await claimStripeWebhookEvent(
+      supabaseAdminClient,
+      stripeEvent.id,
+      stripeEvent.type,
+    );
+    if (claim === "duplicate") {
+      return jsonResponse(200, { status: "duplicate" });
     }
 
-    if (existing?.processed_at && !existing.error) {
-      return json(200, { status: "duplicate" });
-    }
+    await processStripeEvent(stripeEvent);
+    await markStripeWebhookProcessed(supabaseAdminClient, stripeEvent.id);
 
-    if (!existing) {
-      const { error: insertError } = await admin
-        .from("stripe_webhook_events")
-        .insert({ id: event.id, type: event.type });
-      if (insertError && insertError.code !== "23505") {
-        throw new Error(insertError.message);
-      }
-    }
-
-    await processStripeEvent(event);
-
-    const { error: updateError } = await admin
-      .from("stripe_webhook_events")
-      .update({
-        processed_at: new Date().toISOString(),
-        error: null,
-      })
-      .eq("id", event.id);
-
-    if (updateError) {
-      throw new Error(updateError.message);
-    }
-
-    return json(200, { status: "ok", type: event.type });
+    return jsonResponse(200, { status: "ok", type: stripeEvent.type });
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown_error";
-    console.error("[stripe.webhook] processing failed", event.id, event.type, message);
-
-    try {
-      await admin
-        .from("stripe_webhook_events")
-        .update({ error: message })
-        .eq("id", event.id);
-    } catch (persistError) {
-      console.error("[stripe.webhook] failed to persist error", persistError);
-    }
-
-    return json(500, { error: "processing_failed" });
+    console.error(
+      "[stripe.webhook] processing failed",
+      stripeEvent.id,
+      stripeEvent.type,
+      message,
+    );
+    await markStripeWebhookFailed(supabaseAdminClient, stripeEvent.id, message);
+    return jsonResponse(500, { error: "processing_failed" });
   }
 }
 
+/**
+ * GET /api/webhooks/stripe
+ *
+ * @returns 405 `{ error: "method_not_allowed" }`.
+ */
 export function GET() {
-  return json(405, { error: "method_not_allowed" });
+  return jsonResponse(405, { error: "method_not_allowed" });
 }

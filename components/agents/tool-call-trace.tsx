@@ -8,6 +8,12 @@ interface ToolCallTraceProps {
   calls: ToolCall[];
 }
 
+/**
+ * Lightweight tool-call list shown while the assistant is streaming.
+ *
+ * @param props.calls - Named tool invocations with status + detail.
+ * @returns An ordered list, or `null` when empty.
+ */
 export function ToolCallTrace({ calls }: ToolCallTraceProps) {
   if (calls.length === 0) {
     return null;

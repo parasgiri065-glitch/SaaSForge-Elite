@@ -7,7 +7,10 @@ import type { Database } from "@/types/database";
 /**
  * Refresh the Supabase JWT and perform optimistic redirects.
  * This is NOT the authorization boundary — layouts and route handlers
- * must call getClaims() / getUser() themselves.
+ * must call `getClaims()` / `getUser()` themselves.
+ *
+ * @param request - Incoming Next.js request from `proxy.ts`.
+ * @returns The mutated response (cookies refreshed, optional redirect).
  */
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
   let response = NextResponse.next({ request });

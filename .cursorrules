@@ -23,16 +23,21 @@ product behavior.
 
 ```
 app/            Next.js 16 App Router (RSC by default)
-  (marketing)/  public pages
   (auth)/       login, signup, OAuth callback
   (app)/        authenticated shell — server-guarded
-  api/          route handlers (webhooks, health, AI stream)
+  demo/         public mock workspace
+  api/          route handlers (webhooks, health, portal)
 components/     UI only. No data access, no Stripe, no service-role.
-hooks/          client hooks. Thin wrappers around context or fetch.
+hooks/          one concern per hook — UI layout state vs data-fetching
 lib/            server-capable domain logic
   supabase/     browser / server / admin / proxy clients
-  stripe/       SDK + webhook processors
+  stripe/       payload parsers, sync, webhook handlers
   auth/         session, guards, Zod schemas
+  agents/       chat message factories + demo stream
+  markdown/     streaming-safe parser
+  ui/           class-name variants (no third-party kit)
+  security/     Zod API/env schemas
+  crypto/       Web Crypto ids
   env.ts        public env (client-safe)
   env.server.ts server secrets (`import "server-only"`)
 supabase/       SQL migrations + RLS. Schema is source of truth.

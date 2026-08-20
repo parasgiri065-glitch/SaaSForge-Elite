@@ -5,7 +5,9 @@ import type { Database } from "@/types/database";
 
 /**
  * User-scoped server client (anon key). RLS is enforced on every query.
- * Never use createAdminClient() from Server Components or user routes.
+ * Never use `createAdminClient()` from Server Components or user routes.
+ *
+ * @returns A typed server Supabase client bound to request cookies.
  */
 export async function createServerSupabaseClient() {
   const cookieStore = await cookies();

@@ -2,8 +2,16 @@ import "server-only";
 
 import { serverEnvSchema } from "@/lib/security/env-schema";
 
-type RequiredSecret = "SUPABASE_SERVICE_ROLE_KEY" | "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET";
+type RequiredSecret =
+  "SUPABASE_SERVICE_ROLE_KEY" | "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET";
 
+/**
+ * Parse a required server secret through Zod (rejects `YOUR_` placeholders).
+ *
+ * @param name - Env key that must be present and well-formed.
+ * @returns The trimmed secret string.
+ * @throws When missing, empty, or a documented placeholder.
+ */
 function requiredSecret(name: RequiredSecret): string {
   const result = serverEnvSchema.shape[name].safeParse(process.env[name] ?? "");
   if (!result.success) {
@@ -14,6 +22,10 @@ function requiredSecret(name: RequiredSecret): string {
   return result.data;
 }
 
+/**
+ * Lazy server secrets. Getters throw only when a secret is actually read,
+ * so the public demo can boot without real Stripe/Supabase keys.
+ */
 export const serverEnv = {
   get supabaseServiceRoleKey(): string {
     return requiredSecret("SUPABASE_SERVICE_ROLE_KEY");

@@ -2,6 +2,12 @@ import type { SVGProps } from "react";
 
 type IconProps = SVGProps<SVGSVGElement>;
 
+/**
+ * Shared 24×24 stroke SVG wrapper for inline icons.
+ *
+ * @param props - Standard SVG props plus children paths.
+ * @returns An `aria-hidden` svg.
+ */
 function Base({ children, className, ...props }: IconProps) {
   return (
     <svg

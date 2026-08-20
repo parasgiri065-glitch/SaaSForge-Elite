@@ -6,9 +6,11 @@ import { serverEnv } from "@/lib/env.server";
 import type { Database } from "@/types/database";
 
 /**
- * Service-role client. Bypasses RLS.
+ * Service-role Supabase client. Bypasses RLS.
  * Call only after an independent trust check (verified Stripe signature).
  * Never import this module from Client Components — `server-only` will throw.
+ *
+ * @returns A typed Supabase JS client using the service-role key.
  */
 export function createAdminClient() {
   return createClient<Database>(
@@ -23,3 +25,5 @@ export function createAdminClient() {
     },
   );
 }
+
+export type SupabaseAdminClient = ReturnType<typeof createAdminClient>;

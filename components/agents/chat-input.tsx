@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, type FormEvent, type KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { IconSend, IconStop } from "@/components/ui/icons";
+import { useComposerDraft } from "@/hooks/use-composer-draft";
+import { controlClasses, layoutClasses } from "@/lib/ui/layout-classes";
 
 interface ChatInputProps {
   disabled: boolean;
@@ -11,37 +12,31 @@ interface ChatInputProps {
   onStop: () => void;
 }
 
+/**
+ * Agent composer. Draft state lives in `useComposerDraft`.
+ *
+ * @param props.disabled - Extra lock (e.g. unauthenticated).
+ * @param props.isStreaming - Disables the textarea and shows Stop.
+ * @param props.onSend - Data-fetching callback from `useAgentStream`.
+ * @param props.onStop - Aborts the in-flight stream.
+ * @returns The composer form.
+ */
 export function ChatInput({ disabled, isStreaming, onSend, onStop }: ChatInputProps) {
-  const [value, setValue] = useState("");
-  const blocked = disabled || isStreaming;
-
-  function submit() {
-    const next = value.trim();
-    if (!next || blocked) {
-      return;
-    }
-    onSend(next);
-    setValue("");
-  }
-
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    submit();
-  }
-
-  function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      submit();
-    }
-  }
+  const {
+    composerDraft,
+    setComposerDraft,
+    isComposerBlocked,
+    handleComposerSubmit,
+    handleComposerKeyDown,
+  } = useComposerDraft({
+    isDisabled: disabled,
+    isStreaming,
+    onSendPrompt: onSend,
+  });
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="border-t border-white/10 bg-black/30 p-3 backdrop-blur-xl md:p-4"
-    >
-      <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border border-white/10 bg-white/5 p-2">
+    <form onSubmit={handleComposerSubmit} className={layoutClasses.composerBar}>
+      <div className={layoutClasses.composerShell}>
         <label className="sr-only" htmlFor="agent-prompt">
           Message
         </label>
@@ -49,12 +44,12 @@ export function ChatInput({ disabled, isStreaming, onSend, onStop }: ChatInputPr
           id="agent-prompt"
           name="prompt"
           rows={1}
-          value={value}
-          disabled={blocked}
-          onChange={(event) => setValue(event.target.value)}
-          onKeyDown={onKeyDown}
+          value={composerDraft}
+          disabled={isComposerBlocked}
+          onChange={(event) => setComposerDraft(event.target.value)}
+          onKeyDown={handleComposerKeyDown}
           placeholder={isStreaming ? "Waiting for the model…" : "Ask the agent…"}
-          className="max-h-36 min-h-11 flex-1 resize-none bg-transparent px-3 py-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60"
+          className={controlClasses.composerTextarea}
         />
         {isStreaming ? (
           <Button
@@ -71,7 +66,7 @@ export function ChatInput({ disabled, isStreaming, onSend, onStop }: ChatInputPr
           <Button
             type="submit"
             size="sm"
-            disabled={blocked || value.trim().length === 0}
+            disabled={isComposerBlocked || composerDraft.trim().length === 0}
             aria-label="Send message"
           >
             <IconSend className="h-3.5 w-3.5" />

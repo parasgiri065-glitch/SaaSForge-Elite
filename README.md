@@ -158,18 +158,24 @@ SaaSForge-Elite/
 │       ├── chat-viewport.tsx
 │       └── tool-call-trace.tsx
 ├── hooks/
-│   ├── use-tenant.ts
-│   ├── use-entitlements.ts
-│   ├── use-billing.ts
-│   └── use-agent-stream.ts
+│   ├── use-agent-stream.ts
+│   ├── use-live-auth-session.ts
+│   ├── use-mobile-navigation.ts
+│   ├── use-stick-to-bottom-scroll.ts
+│   ├── use-stripe-billing-portal.ts
+│   └── use-user-subscription-state.ts
 ├── lib/
+│   ├── ui/
+│   │   ├── cn.ts
+│   │   └── layout-classes.ts
 │   ├── supabase/
 │   │   ├── client.ts
 │   │   ├── server.ts
 │   │   └── admin.ts
 │   ├── stripe/
 │   │   ├── client.ts
-│   │   ├── plans.ts
+│   │   ├── webhook-payload.ts
+│   │   ├── subscription-sync.ts
 │   │   └── webhook.ts
 │   ├── ai/
 │   │   ├── agent.ts

@@ -4,6 +4,7 @@ import { Geist } from "next/font/google";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { publicEnv } from "@/lib/env";
+import { THEME_STORAGE_KEY } from "@/lib/theme/storage-key";
 import "@/app/globals.css";
 
 const geist = Geist({
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
     "Multi-tenant enterprise boilerplate with Supabase auth, RLS, and Stripe billing.",
 };
 
-const themeBootScript = `(function(){try{var k='saasforge-theme';var s=localStorage.getItem(k);var t=s==='light'||s==='dark'?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');if(t==='dark')document.documentElement.classList.add('dark');document.documentElement.style.colorScheme=t;}catch(e){}})();`;
+const themeBootScript = `(function(){try{var k='${THEME_STORAGE_KEY}';var s=localStorage.getItem(k);var t=s==='light'||s==='dark'?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');if(t==='dark')document.documentElement.classList.add('dark');document.documentElement.style.colorScheme=t;}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
