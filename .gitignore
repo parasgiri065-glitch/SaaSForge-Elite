@@ -44,5 +44,5 @@ next-env.d.ts
 supabase/.temp/
 supabase/.branches/
 
-# generated enterprise zip (rebuild with pnpm pack:enterprise)
-/enterprise-assets.zip
+# generated enterprise zip — temporarily tracked so it can be downloaded from GitHub
+# /enterprise-assets.zip
