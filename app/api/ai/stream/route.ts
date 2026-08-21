@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const GEMINI_CHAT_MODEL = "gemini-1.5-flash";
+const GEMINI_CHAT_MODEL = "gemini-2.0-flash";
 
 const DEMO_STREAM_MESSAGE =
   "Welcome to the SaaSForge Elite demo. In production, this workspace is powered by Google Gemini. Add your GEMINI_API_KEY to unlock full inference.";
