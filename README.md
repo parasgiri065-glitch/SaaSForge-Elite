@@ -123,7 +123,7 @@ SaaSForge-Elite/
 │   │
 │   └── api/
 │       ├── health/               Liveness probe. No secrets, no DB.
-│       ├── ai/stream/            Groq (Vercel AI SDK) text stream. No mock.
+│       ├── ai/stream/            Google Gemini (Vercel AI SDK) text stream. Falls back to demo.
 │       ├── stripe/portal/        POST empty body → Stripe Customer Portal URL.
 │       └── webhooks/
 │           ├── stripe/           HMAC verify, idempotent event apply.
@@ -147,7 +147,7 @@ SaaSForge-Elite/
 │   │                             Plan tier + Stripe customer derived from auth.
 │   ├── use-stripe-billing-portal.ts
 │   │                             POST /api/stripe/portal; surfaces typed errors.
-│   ├── use-agent-stream.ts       Transcript + POST /api/ai/stream (Groq).
+│ ├── use-agent-stream.ts       Transcript + POST /api/ai/stream (Gemini).
 │   ├── use-composer-draft.ts     Composer text only (no network).
 │   ├── use-mobile-navigation.ts  Drawer open/close + body scroll lock.
 │   ├── use-stick-to-bottom-scroll.ts
@@ -390,7 +390,7 @@ Placeholders containing `YOUR_` are **rejected**. Copying `.env.example` without
 | Lemon webhook `400 missing_x_signature` | No `X-Signature` header | Confirm Lemon Squeezy is posting to this app, not a proxy that strips headers. |
 | Lemon webhook `200 skipped` | `meta.custom_data.github_username` missing/invalid | Pass `{ "github_username": "<login>" }` as checkout custom data. |
 | Lemon webhook `500 github_invite_failed` | `GITHUB_PAT_TOKEN` / `GITHUB_OWNER` / `GITHUB_REPO` | PAT needs collaborator invite rights on that repo. Owner/repo must exist. |
-| Chat shows `API Key missing in environment` | `GROQ_API_KEY` | Set it in `.env.local` and Vercel Production, then Redeploy. There is no mock stream. |
+| Chat shows demo welcome message | `GEMINI_API_KEY` | Set it in `.env.local` and Vercel Production, then Redeploy. The endpoint gracefully falls back to a demo stream when the key is missing. |
 
 ### Checklist (run in order)
 
