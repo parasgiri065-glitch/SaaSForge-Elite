@@ -1,4 +1,4 @@
-import { IconCard, IconLayout, IconShield, IconWebhook } from "@/components/ui/icons";
+import { IconCard, IconLayout, IconShield } from "@/components/ui/icons";
 import { marketingClasses } from "@/lib/ui/marketing-classes";
 import type { ComponentType, SVGProps } from "react";
 
@@ -25,14 +25,8 @@ const LANDING_FEATURES: readonly {
   {
     icon: IconCard,
     eyebrow: "Billing",
-    title: "Stripe customer per organization",
-    body: "The browser never sends a customer id. Portal POST is empty JSON. HMAC constructEvent on the raw body, idempotent stripe_webhook_events ledger, one subscription row per org. Roles: owner, admin, billing.",
-  },
-  {
-    icon: IconWebhook,
-    eyebrow: "Fulfillment",
-    title: "Lemon Squeezy → GitHub invite",
-    body: "HMAC-SHA256 of the raw body vs X-Signature. order_created reads github_username and PUT-invites the buyer as a pull collaborator. Missing username returns 200 skipped — no retry loop.",
+    title: "Stripe SaaS billing & webhooks",
+    body: "Stripe customer is per organization, never per user. The browser never sends a customer id. Portal POST is empty JSON. HMAC constructEvent on the raw body, idempotent stripe_webhook_events ledger. Roles: owner, admin, billing.",
   },
 ];
 
@@ -45,7 +39,7 @@ const TRUST_ORDER = [
 ] as const;
 
 /**
- * README-backed feature grid: stack, tenancy, Stripe, Lemon — no chat UI.
+ * Product feature grid: Next.js 16, Supabase tenancy, Stripe billing.
  *
  * @returns Spec cards plus the billed-mutation trust order.
  */
@@ -63,7 +57,7 @@ export function LandingFeatures() {
           scope explicitly. Wired, typed, and hardened before you write a feature.
         </p>
       </div>
-      <div className="mt-12 grid gap-4 md:grid-cols-2">
+      <div className="mt-12 grid gap-4 md:grid-cols-3">
         {LANDING_FEATURES.map((feature, index) => {
           const Icon = feature.icon;
           return (

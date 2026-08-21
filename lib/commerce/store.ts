@@ -25,7 +25,11 @@ export const LICENSE_TIERS: readonly LicenseTier[] = [
     priceUsd: 149,
     priceLabel: "$149",
     blurb: "The production core — clone, configure, ship.",
-    features: ["GitHub Repo Access", "Next.js + Supabase Core", "Lemon Squeezy Webhooks"],
+    features: [
+      "GitHub Repo Access",
+      "Next.js + Supabase Core",
+      "Stripe SaaS Billing & Webhooks",
+    ],
     highlighted: false,
     href: LEMON_SQUEEZY_STORE_URL,
     ctaLabel: "Buy Standard — $149",

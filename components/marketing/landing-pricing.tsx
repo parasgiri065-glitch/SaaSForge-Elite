@@ -18,8 +18,8 @@ export function LandingPricing() {
         </h2>
         <p className={`${marketingClasses.body} mt-3`}>
           Commercial boilerplate, not MIT. Standard $149 — one production domain.
-          Enterprise / Agency $349 — unlimited production apps and client work. Checkout
-          on Lemon Squeezy; GitHub access is invited after payment.
+          Enterprise / Agency $349 — unlimited production apps and client work. One
+          payment. GitHub access after checkout.
         </p>
       </div>
 
