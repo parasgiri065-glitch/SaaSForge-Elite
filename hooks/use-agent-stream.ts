@@ -87,22 +87,32 @@ export function useAgentStream(): AgentStreamState {
 
       if (!response.ok) {
         const errorBody: unknown = await response.json().catch(() => null);
-        throw new Error(readJsonError(errorBody, "Stream failed"));
+        const message = readJsonError(errorBody, `Stream failed (${response.status})`);
+        console.error("[ai.stream] client HTTP error", response.status, message);
+        throw new Error(message);
       }
 
       if (!response.body) {
+        console.error("[ai.stream] client received an empty body");
         throw new Error("Stream response was empty");
       }
 
+      let receivedChars = 0;
       await consumeTextStream(
         response.body,
         (tokenChunk) => {
+          receivedChars += tokenChunk.length;
           setMessages((currentMessages) =>
             appendChunkToAssistantMessage(currentMessages, assistantMessageId, tokenChunk),
           );
         },
         abortController.signal,
       );
+
+      if (receivedChars === 0) {
+        console.error("[ai.stream] Groq returned an empty stream");
+        throw new Error("The model returned no text. Check GROQ_API_KEY on Vercel.");
+      }
 
       setMessages((currentMessages) =>
         completeAssistantMessage(currentMessages, assistantMessageId),
@@ -112,6 +122,7 @@ export function useAgentStream(): AgentStreamState {
         return;
       }
       const isolated = isolateUnknownError(error, "stream_failed");
+      console.error("[ai.stream] client catch", isolated);
       setMessages((currentMessages) =>
         failAssistantMessage(currentMessages, assistantMessageId, isolated.message),
       );

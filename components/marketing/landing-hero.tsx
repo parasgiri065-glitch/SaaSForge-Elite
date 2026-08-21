@@ -8,7 +8,7 @@ interface LandingHeroProps {
 }
 
 /**
- * Landing hero copy and primary CTAs (demo + store).
+ * High-converting hero: value prop, stack, store + demo CTAs.
  *
  * @param props.displayClassName - Display font utilities from the homepage.
  * @returns The centered hero section.
@@ -16,7 +16,9 @@ interface LandingHeroProps {
 export function LandingHero({ displayClassName }: LandingHeroProps) {
   return (
     <section className="mx-auto max-w-3xl text-center">
-      <p className="animate-rise text-sm text-violet-200/80">Enterprise Next.js boilerplate</p>
+      <p className="animate-rise text-sm tracking-[0.16em] text-violet-200/80 uppercase">
+        Next.js 16 SaaS boilerplate
+      </p>
       <h1
         className={cn(
           displayClassName,
@@ -24,16 +26,17 @@ export function LandingHero({ displayClassName }: LandingHeroProps) {
         )}
         style={{ animationDelay: "80ms" }}
       >
-        Ship the product.
+        Launch your SaaS in days,
         <br />
-        Skip the 100-hour setup.
+        not months.
       </h1>
       <p
         className="animate-rise mx-auto mt-5 max-w-xl text-base text-white/55 sm:text-lg"
         style={{ animationDelay: "160ms" }}
       >
-        Auth, multi-tenant RLS, Stripe, and a streaming Groq agent — already wired,
-        typed, and isolated. $149 Standard · $349 Enterprise.
+        Stop rebuilding auth, tenancy, billing, and AI. SaaSForge Elite is a
+        production Next.js kit — typed, isolated, and ready to sell. One checkout.
+        GitHub access lands automatically.
       </p>
       <div
         className="animate-rise mt-8 flex flex-wrap items-center justify-center gap-3"
@@ -45,15 +48,21 @@ export function LandingHero({ displayClassName }: LandingHeroProps) {
           rel="noreferrer"
           className={controlClasses.primaryCta}
         >
-          Get the boilerplate
+          Buy the boilerplate
         </a>
-        <Link href="/demo/dashboard" className={controlClasses.secondaryCta}>
-          Open live demo
-        </Link>
+        <a href="#pricing" className={controlClasses.secondaryCta}>
+          View pricing
+        </a>
         <Link href="/demo/agents" className={controlClasses.secondaryCta}>
-          Try the AI agent
+          Try the live AI agent
         </Link>
       </div>
+      <p
+        className="animate-rise mt-5 text-xs text-white/35"
+        style={{ animationDelay: "320ms" }}
+      >
+        Standard $149 · Enterprise $349 · Commercial license, not MIT
+      </p>
     </section>
   );
 }

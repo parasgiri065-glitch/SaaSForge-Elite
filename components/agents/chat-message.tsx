@@ -28,12 +28,15 @@ export function ChatMessage({ message }: ChatMessageProps) {
       <div className={chatBubbleClassName(isUserMessage)}>
         {isUserMessage ? (
           <p className="text-sm leading-6 whitespace-pre-wrap">{message.content}</p>
+        ) : message.status === "error" ? (
+          <p className="text-sm text-red-300" role="alert">
+            {message.content.trim().length > 0
+              ? message.content
+              : "The stream ended unexpectedly. Check GROQ_API_KEY on Vercel."}
+          </p>
         ) : (
           <MarkdownStream content={message.content} streaming={isStreaming} />
         )}
-        {message.status === "error" ? (
-          <p className="mt-2 text-xs text-red-500">The stream ended unexpectedly.</p>
-        ) : null}
       </div>
     </article>
   );
