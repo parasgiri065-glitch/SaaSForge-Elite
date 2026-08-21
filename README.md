@@ -390,7 +390,7 @@ Placeholders containing `YOUR_` are **rejected**. Copying `.env.example` without
 | Lemon webhook `400 missing_x_signature` | No `X-Signature` header | Confirm Lemon Squeezy is posting to this app, not a proxy that strips headers. |
 | Lemon webhook `200 skipped` | `meta.custom_data.github_username` missing/invalid | Pass `{ "github_username": "<login>" }` as checkout custom data. |
 | Lemon webhook `500 github_invite_failed` | `GITHUB_PAT_TOKEN` / `GITHUB_OWNER` / `GITHUB_REPO` | PAT needs collaborator invite rights on that repo. Owner/repo must exist. |
-| Chat shows `groq_not_configured` | `GROQ_API_KEY` | Set it in `.env.local` and Vercel. There is no mock stream. |
+| Chat shows `API Key missing in environment` | `GROQ_API_KEY` | Set it in `.env.local` and Vercel Production, then Redeploy. There is no mock stream. |
 
 ### Checklist (run in order)
 

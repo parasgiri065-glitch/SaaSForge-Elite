@@ -59,7 +59,7 @@ export const controlClasses = {
   ghostLink:
     "rounded-full border border-white/15 px-3 py-1.5 text-sm text-white/70 hover:bg-white/5",
   primaryCta:
-    "rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-zinc-950 shadow-[0_0_36px_rgba(139,92,246,0.28)] transition hover:scale-[1.03]",
+    "rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-zinc-950 shadow-[0_0_24px_rgba(139,92,246,0.22)] transition duration-200 hover:scale-[1.03] hover:shadow-[0_0_42px_rgba(139,92,246,0.5)]",
   secondaryCta:
     "rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm text-white/80 hover:bg-white/10",
   submitButton:

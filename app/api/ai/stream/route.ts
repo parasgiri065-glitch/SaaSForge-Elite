@@ -1,5 +1,7 @@
 import { createGroq } from "@ai-sdk/groq";
 import { streamText } from "ai";
+import { plainTextStreamResponse } from "@/lib/agents/plain-text-stream-response";
+import { readGroqApiKey } from "@/lib/agents/read-groq-api-key";
 import { AGENT_SYSTEM_PROMPT } from "@/lib/agents/system-prompt";
 import { isolateUnknownError } from "@/lib/errors/isolate-unknown-error";
 import { parseJsonUnknown } from "@/lib/http/parse-json-unknown";
@@ -12,21 +14,24 @@ export const maxDuration = 60;
 
 const GROQ_CHAT_MODEL = "llama-3.1-8b-instant";
 
+const MISSING_KEY_MESSAGE = "API Key missing in environment";
+
 /**
  * POST /api/ai/stream
  *
- * Vercel AI SDK + Groq provider. Reads `process.env.GROQ_API_KEY`.
- * Does **not** pass `request.signal` into Groq — on Vercel that abort fires
- * when the body is consumed and kills the stream before any tokens.
+ * Vercel AI SDK (`streamText`) + official Groq provider.
+ * Reads `process.env.GROQ_API_KEY`. Does **not** bind Groq to
+ * `request.signal` — on Vercel that abort fires when the POST body is
+ * consumed and kills the model before any tokens.
  *
  * @param request - JSON `{ prompt, messages? }`.
  * @returns A UTF-8 text stream, or JSON 4xx/5xx on failure.
  */
 export async function POST(request: Request) {
-  const groqApiKey = process.env.GROQ_API_KEY?.trim() ?? "";
-  if (groqApiKey.length === 0 || groqApiKey.includes("YOUR_")) {
-    console.error("[ai.stream] GROQ_API_KEY is missing or a placeholder");
-    return jsonResponse(503, { error: "groq_not_configured" });
+  const groqApiKey = readGroqApiKey(process.env.GROQ_API_KEY);
+  if (groqApiKey === null) {
+    console.error("[ai.stream] GROQ_API_KEY is undefined or a placeholder");
+    return jsonResponse(500, { error: MISSING_KEY_MESSAGE });
   }
 
   let rawBody: string;
@@ -72,16 +77,11 @@ export async function POST(request: Request) {
       },
     });
 
-    return result.toTextStreamResponse({
-      headers: {
-        "Cache-Control": "no-store",
-        "X-Accel-Buffering": "no",
-      },
-    });
+    return plainTextStreamResponse(result.textStream);
   } catch (error: unknown) {
     const isolated = isolateUnknownError(error, "stream_failed");
     console.error("[ai.stream] groq failed", isolated);
-    return jsonResponse(500, { error: isolated.code });
+    return jsonResponse(500, { error: isolated.message });
   }
 }
 

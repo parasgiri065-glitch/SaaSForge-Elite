@@ -87,7 +87,12 @@ export function useAgentStream(): AgentStreamState {
 
       if (!response.ok) {
         const errorBody: unknown = await response.json().catch(() => null);
-        const message = readJsonError(errorBody, `Stream failed (${response.status})`);
+        const message = readJsonError(
+          errorBody,
+          response.status === 500
+            ? "API Key missing in environment"
+            : `Stream failed (${response.status})`,
+        );
         console.error("[ai.stream] client HTTP error", response.status, message);
         throw new Error(message);
       }
@@ -103,7 +108,11 @@ export function useAgentStream(): AgentStreamState {
         (tokenChunk) => {
           receivedChars += tokenChunk.length;
           setMessages((currentMessages) =>
-            appendChunkToAssistantMessage(currentMessages, assistantMessageId, tokenChunk),
+            appendChunkToAssistantMessage(
+              currentMessages,
+              assistantMessageId,
+              tokenChunk,
+            ),
           );
         },
         abortController.signal,
@@ -111,7 +120,7 @@ export function useAgentStream(): AgentStreamState {
 
       if (receivedChars === 0) {
         console.error("[ai.stream] Groq returned an empty stream");
-        throw new Error("The model returned no text. Check GROQ_API_KEY on Vercel.");
+        throw new Error("API Key missing in environment");
       }
 
       setMessages((currentMessages) =>

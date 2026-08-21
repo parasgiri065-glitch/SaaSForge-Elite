@@ -141,3 +141,39 @@ export function IconExternal({ className }: IconProps) {
     </Base>
   );
 }
+
+export function IconCheck({ className }: IconProps) {
+  return (
+    <Base className={className}>
+      <path d="M5 12.5l4.2 4.2L19 7.5" />
+    </Base>
+  );
+}
+
+export function IconShield({ className }: IconProps) {
+  return (
+    <Base className={className}>
+      <path d="M12 3l8 3v6c0 5-3.4 8.4-8 9.5C7.4 20.4 4 17 4 12V6l8-3z" />
+      <path d="M9.5 12.2l1.8 1.8 3.4-3.6" />
+    </Base>
+  );
+}
+
+export function IconBolt({ className }: IconProps) {
+  return (
+    <Base className={className}>
+      <path d="M13 3L6 13h5l-1 8 7-10h-5l1-8z" />
+    </Base>
+  );
+}
+
+export function IconWebhook({ className }: IconProps) {
+  return (
+    <Base className={className}>
+      <path d="M10 15.5A3.5 3.5 0 1 1 6.7 10" />
+      <path d="M14 8.5A3.5 3.5 0 1 1 17.3 14" />
+      <path d="M9.2 8.2A3.5 3.5 0 1 1 14.8 8.2" />
+      <path d="M8.2 12.2h7.6" />
+    </Base>
+  );
+}

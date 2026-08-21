@@ -32,7 +32,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
           <p className="text-sm text-red-300" role="alert">
             {message.content.trim().length > 0
               ? message.content
-              : "The stream ended unexpectedly. Check GROQ_API_KEY on Vercel."}
+              : "API Key missing in environment"}
           </p>
         ) : (
           <MarkdownStream content={message.content} streaming={isStreaming} />
