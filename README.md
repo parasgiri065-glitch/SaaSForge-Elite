@@ -2,7 +2,7 @@
 
 **https://saasforge-elite.vercel.app**
 
-Public Next.js 16 deployment on Vercel. Open the landing page, then **Open live demo** for the dashboard or **Try the AI agent** — no signup required.
+Public Next.js 16 deployment on Vercel. Open the landing page, then **Open live demo** for the dashboard — no signup required.
 
 If Vercel asks for a **Project Name**, use exactly: `saasforge-elite` (lowercase, no spaces). The GitHub repo name `SaaSForge-Elite` is rejected by Vercel’s slug rules.
 

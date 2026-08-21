@@ -14,11 +14,12 @@ export function LandingPricing() {
       <div className="mx-auto max-w-2xl text-center">
         <p className={marketingClasses.eyebrow}>Pricing</p>
         <h2 className={`${marketingClasses.heading} mt-3`}>
-          One payment. The 100-hour tax ends here.
+          Stop paying the 100-hour tax on every new SaaS.
         </h2>
         <p className={`${marketingClasses.body} mt-3`}>
-          Commercial license, not MIT. Checkout on Lemon Squeezy — GitHub access is
-          invited automatically after payment.
+          Commercial boilerplate, not MIT. Standard $149 — one production domain.
+          Enterprise / Agency $349 — unlimited production apps and client work. Checkout
+          on Lemon Squeezy; GitHub access is invited after payment.
         </p>
       </div>
 

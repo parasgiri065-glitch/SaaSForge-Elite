@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     template: `%s · ${publicEnv.appName}`,
   },
   description:
-    "The ultimate Next.js 16 boilerplate. Pre-configured with Supabase Auth & RLS, Lemon Squeezy automated webhooks, and an integrated Groq AI inference engine.",
+    "Ship a production-grade, multi-tenant SaaS in a weekend. Next.js 16 App Router, TypeScript, Tailwind CSS, Supabase Auth + RLS, and Stripe billing — already wired, typed, and hardened.",
 };
 
 const themeBootScript = `(function(){try{var k='${THEME_STORAGE_KEY}';var s=localStorage.getItem(k);var t=s==='light'||s==='dark'?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');if(t==='dark')document.documentElement.classList.add('dark');document.documentElement.style.colorScheme=t;}catch(e){}})();`;
