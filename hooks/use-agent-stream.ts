@@ -23,8 +23,8 @@ export type AgentStreamState = {
 };
 
 /**
- * Transcript + Groq streaming via POST /api/ai/stream.
- * No local canned reply.
+ * Transcript + Gemini streaming via POST /api/ai/stream.
+ * Falls back to a demo stream when GEMINI_API_KEY is not set.
  *
  * @returns Messages, streaming flag, `send(prompt)`, and `stop()`.
  */
@@ -89,9 +89,7 @@ export function useAgentStream(): AgentStreamState {
         const errorBody: unknown = await response.json().catch(() => null);
         const message = readJsonError(
           errorBody,
-          response.status === 500
-            ? "API Key missing in environment"
-            : `Stream failed (${response.status})`,
+          `Stream failed (${response.status})`,
         );
         console.error("[ai.stream] client HTTP error", response.status, message);
         throw new Error(message);
@@ -119,8 +117,8 @@ export function useAgentStream(): AgentStreamState {
       );
 
       if (receivedChars === 0) {
-        console.error("[ai.stream] Groq returned an empty stream");
-        throw new Error("API Key missing in environment");
+        console.error("[ai.stream] model returned an empty stream");
+        throw new Error("Model returned no content");
       }
 
       setMessages((currentMessages) =>

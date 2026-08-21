@@ -47,8 +47,8 @@ export const serverEnv = {
   get openaiApiKey(): string {
     return process.env.OPENAI_API_KEY?.trim() ?? "";
   },
-  get groqApiKey(): string {
-    const value = process.env.GROQ_API_KEY?.trim() ?? "";
+  get geminiApiKey(): string {
+    const value = process.env.GEMINI_API_KEY?.trim() ?? "";
     if (value.length === 0 || value.includes("YOUR_")) {
       return "";
     }

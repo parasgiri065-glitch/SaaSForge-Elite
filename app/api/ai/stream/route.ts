@@ -1,7 +1,6 @@
-import { createGroq } from "@ai-sdk/groq";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { streamText } from "ai";
 import { plainTextStreamResponse } from "@/lib/agents/plain-text-stream-response";
-import { readGroqApiKey } from "@/lib/agents/read-groq-api-key";
 import { AGENT_SYSTEM_PROMPT } from "@/lib/agents/system-prompt";
 import { isolateUnknownError } from "@/lib/errors/isolate-unknown-error";
 import { parseJsonUnknown } from "@/lib/http/parse-json-unknown";
@@ -12,27 +11,23 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const GROQ_CHAT_MODEL = "llama-3.1-8b-instant";
+const GEMINI_CHAT_MODEL = "gemini-1.5-flash";
 
-const MISSING_KEY_MESSAGE = "API Key missing in environment";
+const DEMO_STREAM_MESSAGE =
+  "Welcome to the SaaSForge Elite demo. In production, this workspace is powered by Google Gemini. Add your GEMINI_API_KEY to unlock full inference.";
 
 /**
  * POST /api/ai/stream
  *
- * Vercel AI SDK (`streamText`) + official Groq provider.
- * Reads `process.env.GROQ_API_KEY`. Does **not** bind Groq to
- * `request.signal` — on Vercel that abort fires when the POST body is
- * consumed and kills the model before any tokens.
+ * Vercel AI SDK (`streamText`) + official Google Gemini provider.
+ * Reads `process.env.GEMINI_API_KEY`. If the key is missing, returns a
+ * clean demo stream instead of crashing.
  *
  * @param request - JSON `{ prompt, messages? }`.
  * @returns A UTF-8 text stream, or JSON 4xx/5xx on failure.
  */
 export async function POST(request: Request) {
-  const groqApiKey = readGroqApiKey(process.env.GROQ_API_KEY);
-  if (groqApiKey === null) {
-    console.error("[ai.stream] GROQ_API_KEY is undefined or a placeholder");
-    return jsonResponse(500, { error: MISSING_KEY_MESSAGE });
-  }
+  const geminiApiKey = (process.env.GEMINI_API_KEY ?? "").trim();
 
   let rawBody: string;
   try {
@@ -58,11 +53,17 @@ export async function POST(request: Request) {
     return jsonResponse(400, { error: "invalid_prompt" });
   }
 
+  // ── Graceful fallback ──────────────────────────────────────────────
+  if (geminiApiKey.length === 0 || geminiApiKey.includes("YOUR_")) {
+    console.log("[ai.stream] GEMINI_API_KEY missing — serving demo stream");
+    return plainTextStreamResponse(asyncGeneratorFrom(DEMO_STREAM_MESSAGE));
+  }
+
   try {
-    const groq = createGroq({ apiKey: groqApiKey });
+    const google = createGoogleGenerativeAI({ apiKey: geminiApiKey });
     const history = parsedBody.data.messages ?? [];
     const result = streamText({
-      model: groq(GROQ_CHAT_MODEL),
+      model: google(GEMINI_CHAT_MODEL),
       system: AGENT_SYSTEM_PROMPT,
       messages: [
         ...history.map((message) => ({
@@ -73,14 +74,14 @@ export async function POST(request: Request) {
       ],
       onError({ error }) {
         const isolated = isolateUnknownError(error, "stream_failed");
-        console.error("[ai.stream] groq onError", isolated);
+        console.error("[ai.stream] gemini onError", isolated);
       },
     });
 
     return plainTextStreamResponse(result.textStream);
   } catch (error: unknown) {
     const isolated = isolateUnknownError(error, "stream_failed");
-    console.error("[ai.stream] groq failed", isolated);
+    console.error("[ai.stream] gemini failed", isolated);
     return jsonResponse(500, { error: isolated.message });
   }
 }
@@ -92,4 +93,10 @@ export async function POST(request: Request) {
  */
 export function GET() {
   return jsonResponse(405, { error: "method_not_allowed" });
+}
+
+// ── Helper: turn a static string into an async generator for the demo fallback ──
+
+async function* asyncGeneratorFrom(value: string): AsyncGenerator<string> {
+  yield value;
 }

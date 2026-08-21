@@ -3,7 +3,7 @@
  *
  * `streamText().toTextStreamResponse()` is lazy in AI SDK 7 and can close
  * with zero bytes on Vercel if nothing subscribes. Iterating `textStream`
- * forces the Groq request to run and encodes chunks for the browser.
+ * forces the model request to run and encodes chunks for the browser.
  *
  * @param textDeltas - `result.textStream` from `streamText`.
  * @returns `text/plain` streaming HTTP response.
