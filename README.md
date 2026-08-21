@@ -24,7 +24,8 @@ SaaSForge Elite is a premium enterprise boilerplate for teams who refuse to rebu
 | --- | --- |
 | **Clone** | `git clone https://github.com/parasgiri065-glitch/SaaSForge-Elite.git` |
 | **Install** | `pnpm install` — pnpm only, Node 20.11+ |
-| **License** | Personal **$149** · Enterprise / Agency **$349** — see [LICENSE.md](./LICENSE.md) |
+| **Buy** | [elitesaasforge.lemonsqueezy.com](https://elitesaasforge.lemonsqueezy.com/) — Standard **$149** · Enterprise **$349** |
+| **License** | See [LICENSE.md](./LICENSE.md) |
 
 ---
 
@@ -122,6 +123,7 @@ SaaSForge-Elite/
 │   │
 │   └── api/
 │       ├── health/               Liveness probe. No secrets, no DB.
+│       ├── ai/stream/            Groq (Vercel AI SDK) text stream. No mock.
 │       ├── stripe/portal/        POST empty body → Stripe Customer Portal URL.
 │       └── webhooks/
 │           ├── stripe/           HMAC verify, idempotent event apply.
@@ -145,7 +147,7 @@ SaaSForge-Elite/
 │   │                             Plan tier + Stripe customer derived from auth.
 │   ├── use-stripe-billing-portal.ts
 │   │                             POST /api/stripe/portal; surfaces typed errors.
-│   ├── use-agent-stream.ts       Transcript + demo token stream.
+│   ├── use-agent-stream.ts       Transcript + POST /api/ai/stream (Groq).
 │   ├── use-composer-draft.ts     Composer text only (no network).
 │   ├── use-mobile-navigation.ts  Drawer open/close + body scroll lock.
 │   ├── use-stick-to-bottom-scroll.ts
@@ -388,6 +390,7 @@ Placeholders containing `YOUR_` are **rejected**. Copying `.env.example` without
 | Lemon webhook `400 missing_x_signature` | No `X-Signature` header | Confirm Lemon Squeezy is posting to this app, not a proxy that strips headers. |
 | Lemon webhook `200 skipped` | `meta.custom_data.github_username` missing/invalid | Pass `{ "github_username": "<login>" }` as checkout custom data. |
 | Lemon webhook `500 github_invite_failed` | `GITHUB_PAT_TOKEN` / `GITHUB_OWNER` / `GITHUB_REPO` | PAT needs collaborator invite rights on that repo. Owner/repo must exist. |
+| Chat shows `groq_not_configured` | `GROQ_API_KEY` | Set it in `.env.local` and Vercel. There is no mock stream. |
 
 ### Checklist (run in order)
 
@@ -426,7 +429,11 @@ Placeholders containing `YOUR_` are **rejected**. Copying `.env.example` without
 
 ## License
 
-Commercial boilerplate. **Personal $149** — one production domain. **Enterprise / Agency $349** — unlimited production apps and client work. See [LICENSE.md](./LICENSE.md). AS-IS, no warranty.
+Commercial boilerplate. **Standard $149** — one production domain. **Enterprise / Agency $349** — unlimited production apps and client work.
+
+**Buy:** [https://elitesaasforge.lemonsqueezy.com/](https://elitesaasforge.lemonsqueezy.com/)
+
+See [LICENSE.md](./LICENSE.md). AS-IS, no warranty.
 
 ---
 

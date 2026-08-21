@@ -47,6 +47,13 @@ export const serverEnv = {
   get openaiApiKey(): string {
     return process.env.OPENAI_API_KEY?.trim() ?? "";
   },
+  get groqApiKey(): string {
+    const value = process.env.GROQ_API_KEY?.trim() ?? "";
+    if (value.length === 0 || value.includes("YOUR_")) {
+      return "";
+    }
+    return value;
+  },
   get lemonSqueezyWebhookSecret(): string {
     return requiredEnv("LEMONSQUEEZY_WEBHOOK_SECRET");
   },

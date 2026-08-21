@@ -7,7 +7,13 @@ const PUBLIC_EXACT = new Set([
   "/api/stripe/webhook",
 ]);
 
-const PUBLIC_PREFIXES = ["/callback", "/api/webhooks", "/api/health", "/demo"] as const;
+const PUBLIC_PREFIXES = [
+  "/callback",
+  "/api/webhooks",
+  "/api/health",
+  "/api/ai",
+  "/demo",
+] as const;
 
 /**
  * Whether `proxy.ts` should skip the login redirect for this path.

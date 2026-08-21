@@ -10,8 +10,8 @@ const LANDING_FEATURES = [
     body: "Signed Stripe webhooks, idempotent events, and entitlements that flip only after verification.",
   },
   {
-    title: "An agent inside the product",
-    body: "Streaming answers, a locked composer, tenant-bound tools. The model never holds the keys.",
+    title: "A real agent in the product",
+    body: "Groq-backed streaming answers, a locked composer, tenant-bound tools. The model never holds the keys.",
   },
 ] as const;
 

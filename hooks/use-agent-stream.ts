@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   appendChunkToAssistantMessage,
   completeAllStreamingMessages,
@@ -9,10 +9,11 @@ import {
   createUserChatMessage,
   failAssistantMessage,
 } from "@/lib/agents/create-chat-message";
-import { simulateAgentTokenStream } from "@/lib/agents/simulate-token-stream";
+import { consumeTextStream } from "@/lib/agents/consume-text-stream";
 import { agentPromptSchema } from "@/lib/security/api-schemas";
-import type { ChatMessage } from "@/types/agent";
+import { readJsonError } from "@/lib/http/json-error";
 import { isolateUnknownError } from "@/lib/errors/isolate-unknown-error";
+import type { ChatMessage } from "@/types/agent";
 
 export type AgentStreamState = {
   messages: ChatMessage[];
@@ -22,8 +23,8 @@ export type AgentStreamState = {
 };
 
 /**
- * Transcript + streaming controller for the workspace agent.
- * Data/simulation lives here; scroll and composer state live in sibling hooks.
+ * Transcript + Groq streaming via POST /api/ai/stream.
+ * No local canned reply.
  *
  * @returns Messages, streaming flag, `send(prompt)`, and `stop()`.
  */
@@ -31,6 +32,11 @@ export function useAgentStream(): AgentStreamState {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const messagesRef = useRef<ChatMessage[]>([]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   const stop = useCallback(() => {
     abortControllerRef.current?.abort();
@@ -45,6 +51,19 @@ export function useAgentStream(): AgentStreamState {
       return;
     }
 
+    const history = messagesRef.current
+      .filter(
+        (message) =>
+          message.status === "complete" &&
+          (message.role === "user" || message.role === "assistant") &&
+          message.content.length > 0,
+      )
+      .slice(-16)
+      .map((message) => ({
+        role: message.role as "user" | "assistant",
+        content: message.content,
+      }));
+
     const userMessage = createUserChatMessage(parsedPrompt.data);
     const assistantMessage = createStreamingAssistantMessage();
     const assistantMessageId = assistantMessage.id;
@@ -56,11 +75,34 @@ export function useAgentStream(): AgentStreamState {
     abortControllerRef.current = abortController;
 
     try {
-      await simulateAgentTokenStream((tokenChunk) => {
-        setMessages((currentMessages) =>
-          appendChunkToAssistantMessage(currentMessages, assistantMessageId, tokenChunk),
-        );
-      }, abortController.signal);
+      const response = await fetch("/api/ai/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: parsedPrompt.data,
+          messages: history,
+        }),
+        signal: abortController.signal,
+      });
+
+      if (!response.ok) {
+        const errorBody: unknown = await response.json().catch(() => null);
+        throw new Error(readJsonError(errorBody, "Stream failed"));
+      }
+
+      if (!response.body) {
+        throw new Error("Stream response was empty");
+      }
+
+      await consumeTextStream(
+        response.body,
+        (tokenChunk) => {
+          setMessages((currentMessages) =>
+            appendChunkToAssistantMessage(currentMessages, assistantMessageId, tokenChunk),
+          );
+        },
+        abortController.signal,
+      );
 
       setMessages((currentMessages) =>
         completeAssistantMessage(currentMessages, assistantMessageId),

@@ -7,8 +7,9 @@ The model never holds tenant keys. Tools receive `organization_id` from the
 
 - UI: `ChatViewport` + `useAgentStream` + streaming-safe markdown
   (`lib/markdown/parse.ts`). Incomplete fences stay open code blocks.
-- Demo: `simulateAgentTokenStream` (Web Crypto `randomInt`, no
-  `Math.random`). Composer locks while `isStreaming` (`useComposerDraft`).
+- Inference: `POST /api/ai/stream` via Vercel AI SDK + `@ai-sdk/groq`.
+  Requires `GROQ_API_KEY`. No canned mock reply.
+- Composer locks while `isStreaming` (`useComposerDraft`).
 - Abort: `AbortController` on Stop. `AbortError` is not an error bubble.
 
 ## When you wire `POST /api/ai/stream`

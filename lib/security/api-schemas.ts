@@ -37,6 +37,20 @@ export const agentPromptSchema = z
   .min(1, "empty_prompt")
   .max(8000, "prompt_too_long");
 
+/** POST /api/ai/stream body. History is prior complete turns only. */
+export const agentStreamBodySchema = z.object({
+  prompt: agentPromptSchema,
+  messages: z
+    .array(
+      z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string().trim().min(1).max(8000),
+      }),
+    )
+    .max(20)
+    .optional(),
+});
+
 /** Lemon Squeezy `X-Signature` header: HMAC-SHA256 hex digest. */
 export const lemonSqueezySignatureSchema = z
   .string()

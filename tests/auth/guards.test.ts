@@ -100,6 +100,7 @@ describe("public path guards", () => {
     expect(isPublicPath("/login")).toBe(true);
     expect(isPublicPath("/signup")).toBe(true);
     expect(isPublicPath("/api/health")).toBe(true);
+    expect(isPublicPath("/api/ai/stream")).toBe(true);
     expect(isPublicPath("/api/webhooks/stripe")).toBe(true);
     expect(isPublicPath("/api/webhooks/lemonsqueezy")).toBe(true);
     expect(isPublicPath("/api/stripe/webhook")).toBe(true);
